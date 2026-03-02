@@ -1,0 +1,25 @@
+<main class="home">
+  <section class="card">
+    <p class="eyebrow">MVP Frontend</p>
+    <h1>{{ title() }}</h1>
+    <p class="subtitle">
+      Skeleton Angular conectado al API Gateway para validar el flujo local.
+    </p>
+
+    <button type="button" (click)="pingGateway()" [disabled]="isLoading()">
+      @if (isLoading()) {
+        Consultando...
+      } @else {
+        Ping Gateway
+      }
+    </button>
+
+    @if (errorMessage()) {
+      <pre class="result error">{{ errorMessage() }}</pre>
+    }
+
+    @if (pingResult()) {
+      <pre class="result">{{ pingResult() | json }}</pre>
+    }
+  </section>
+</main>
