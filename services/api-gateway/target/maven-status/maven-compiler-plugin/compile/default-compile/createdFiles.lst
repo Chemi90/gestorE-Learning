@@ -1,0 +1,3 @@
+com\gestorelearning\apigateway\PingController.class
+com\gestorelearning\apigateway\ApiGatewayApplication.class
+com\gestorelearning\apigateway\SecurityConfig.class
