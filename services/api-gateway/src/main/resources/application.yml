@@ -4,6 +4,65 @@ server:
 spring:
   application:
     name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - ${GATEWAY_ALLOWED_ORIGINS:http://localhost:4200}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://auth-service:8081}
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+        - id: content-service
+          uri: ${CONTENT_SERVICE_URL:http://content-service:8082}
+          predicates:
+            - Path=/content/**
+          filters:
+            - StripPrefix=1
+        - id: rag-service
+          uri: ${RAG_SERVICE_URL:http://rag-service:8083}
+          predicates:
+            - Path=/rag/**
+          filters:
+            - StripPrefix=1
+        - id: exam-service
+          uri: ${EXAM_SERVICE_URL:http://exam-service:8084}
+          predicates:
+            - Path=/exam/**
+          filters:
+            - StripPrefix=1
+        - id: grading-service
+          uri: ${GRADING_SERVICE_URL:http://grading-service:8085}
+          predicates:
+            - Path=/grading/**
+          filters:
+            - StripPrefix=1
+        - id: integrity-service
+          uri: ${INTEGRITY_SERVICE_URL:http://integrity-service:8086}
+          predicates:
+            - Path=/integrity/**
+          filters:
+            - StripPrefix=1
+        - id: llm-orchestrator
+          uri: ${LLM_ORCHESTRATOR_URL:http://llm-orchestrator:8087}
+          predicates:
+            - Path=/llm/**
+          filters:
+            - StripPrefix=1
 
 management:
   endpoint:
