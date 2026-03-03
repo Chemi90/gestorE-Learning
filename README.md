@@ -102,7 +102,7 @@ Mas detalle: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Docker Desktop + Docker Compose
 - Java 25
 - Maven 3.9+
-- Node.js 22+ y npm
+- Node.js 24+ y npm
 
 ## Quick start local
 

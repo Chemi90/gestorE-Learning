@@ -5,7 +5,7 @@
 - Docker Desktop
 - Java 25
 - Maven 3.9+
-- Node.js 22+
+- Node.js 24+
 
 ## 1. Start infrastructure
 
