@@ -52,8 +52,8 @@ Mas detalle: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 | Componente | Puerto | Responsabilidad MVP |
 |---|---:|---|
 | api-gateway | 8080 | entrada unica HTTP, routing y CORS |
-| auth-service | 8081 | autenticacion/autorizacion (skeleton) |
-| content-service | 8082 | gestion de contenidos (skeleton) |
+| auth-service | 8081 | autenticacion JWT (register/login/me) |
+| content-service | 8082 | contenido + endpoint protegido por rol |
 | rag-service | 8083 | retrieval/RAG (skeleton) |
 | exam-service | 8084 | examenes (skeleton) |
 | grading-service | 8085 | calificacion (skeleton) |
@@ -119,17 +119,23 @@ docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
 Cada microservicio expone:
 
 - `GET /health`
-- `GET /api/v1/ping`
+- `GET /api/v1/ping` (protegido en `content-service`)
 
 Ejemplo (minimo para smoke test):
 
 Terminal 1:
 
 ```powershell
+mvn -B -ntp -f services/pom.xml -pl auth-service spring-boot:run
+```
+
+Terminal 2:
+
+```powershell
 mvn -B -ntp -f services/pom.xml -pl content-service spring-boot:run
 ```
 
-Terminal 2 (gateway en modo localhost):
+Terminal 3 (gateway en modo localhost):
 
 ```powershell
 $env:CONTENT_SERVICE_URL="http://localhost:8082"
@@ -140,13 +146,13 @@ $env:GRADING_SERVICE_URL="http://localhost:8085"
 $env:INTEGRITY_SERVICE_URL="http://localhost:8086"
 $env:LLM_ORCHESTRATOR_URL="http://localhost:8087"
 $env:GATEWAY_ALLOWED_ORIGINS="http://localhost:4200"
+$env:JWT_SECRET="01234567890123456789012345678901"
 mvn -B -ntp -f services/pom.xml -pl api-gateway spring-boot:run
 ```
 
-Comprobacion:
+Comprobacion basica:
 
 ```powershell
-curl http://localhost:8080/content/api/v1/ping
 curl http://localhost:8080/api/v1/ping
 ```
 
@@ -160,11 +166,85 @@ npm start
 
 Abrir: `http://localhost:4200`
 
-Boton **Ping Gateway** llama a `GET http://localhost:8080/content/api/v1/ping`.
+Flujo frontend:
+
+- login contra `POST http://localhost:8080/api/v1/auth/login`
+- guarda token en memoria
+- boton **Probar endpoint protegido** llama `POST http://localhost:8080/content/api/v1/temarios/test`
+
+## Fase 1 auth JWT (como probar)
+
+### 1) Levantar Postgres
+
+```powershell
+Copy-Item infra/.env.example infra/.env
+docker compose --env-file infra/.env -f infra/docker-compose.yml up -d postgres
+```
+
+### 2) Registrar usuario
+
+```powershell
+curl -X POST http://localhost:8080/api/v1/auth/register `
+  -H "Content-Type: application/json" `
+  -d '{"email":"teacher@example.com","password":"password123","role":"TEACHER"}'
+```
+
+### 3) Login y obtener JWT
+
+```powershell
+curl -X POST http://localhost:8080/api/v1/auth/login `
+  -H "Content-Type: application/json" `
+  -d '{"email":"teacher@example.com","password":"password123"}'
+```
+
+Respuesta esperada:
+
+```json
+{
+  "accessToken": "<jwt>",
+  "role": "TEACHER"
+}
+```
+
+### 4) Endpoint protegido sin token (debe fallar 401)
+
+```powershell
+curl -i http://localhost:8080/content/api/v1/ping
+```
+
+### 5) Endpoint protegido con token
+
+```powershell
+$token="<jwt devuelto en login>"
+curl -X POST http://localhost:8080/content/api/v1/temarios/test `
+  -H "Authorization: Bearer $token"
+```
+
+### 6) Endpoint `me`
+
+```powershell
+curl http://localhost:8080/auth/api/v1/auth/me `
+  -H "Authorization: Bearer $token"
+```
+
+## Diagrama flujo JWT
+
+```text
+[Frontend] --login--> [API Gateway] --proxy--> [auth-service]
+    ^                         |                    |
+    |----- JWT ---------------|<-- signed token ---|
+    |
+    | Authorization: Bearer <jwt>
+    v
+[API Gateway] -- valida JWT + anade X-User-Role --> [content-service]
+                                                    |
+                                                    `--> autoriza por rol (ADMIN/TEACHER)
+```
 
 ## Gateway routes
 
 - `/auth/**` -> `auth-service:8081`
+- `/api/v1/auth/**` -> `auth-service:8081`
 - `/content/**` -> `content-service:8082`
 - `/rag/**` -> `rag-service:8083`
 - `/exam/**` -> `exam-service:8084`
@@ -255,3 +335,4 @@ npm test -- --watch=false
 - Integracion LMS (ultima fase del roadmap MVP).
 - Endurecer seguridad, trazabilidad (`request-id`) y manejo de errores estandar.
 - Agregar despliegue automatizado a Railway.
+
