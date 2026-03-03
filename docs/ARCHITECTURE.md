@@ -2,13 +2,11 @@
 
 ## Context
 
-This repository is a monorepo for an e-learning platform built with:
+Monorepo for an e-learning platform with:
 
 - Spring Boot microservices
 - Angular frontend
 - PostgreSQL + Redis + MinIO
-
-The current phase is MVP skeleton (no LMS integration yet).
 
 ## High-level view
 
@@ -31,53 +29,68 @@ shared infra
 - minio (9000/9001)
 ```
 
-## Service responsibilities (MVP skeleton)
+## API Gateway routing
 
-- `api-gateway`: central HTTP entrypoint, CORS and route forwarding.
-- `auth-service`: auth/authz domain placeholder.
-- `content-service`: content management placeholder.
-- `rag-service`: retrieval and vector-search placeholder.
-- `exam-service`: exam lifecycle placeholder.
-- `grading-service`: grading workflows placeholder.
-- `integrity-service`: integrity/proctoring placeholder.
-- `llm-orchestrator`: orchestration placeholder for future AI workflows.
+Gateway is the only external HTTP entrypoint.
 
-## Data strategy
+Configured route prefixes:
 
-Single PostgreSQL instance for local MVP with schema-per-service:
+- `/api/v1/auth/**` -> `auth-service`
+- `/auth/**` -> `auth-service` (legacy prefix with `StripPrefix=1`)
+- `/content/**` -> `content-service`
+- `/rag/**` -> `rag-service`
+- `/exam/**` -> `exam-service`
+- `/grading/**` -> `grading-service`
+- `/integrity/**` -> `integrity-service`
+- `/llm/**` -> `llm-orchestrator`
 
-- `auth`
-- `content`
-- `rag`
-- `exam`
-- `grading`
-- `integrity`
+Global CORS is enabled for `/**` and uses `GATEWAY_ALLOWED_ORIGINS` (default `http://localhost:4200`).
 
-This keeps setup simple while preserving separation for future extraction.
+## Security at gateway
 
-## Communication
+JWT validation is implemented in `JwtValidationFilter`.
 
-Current:
+Public routes (no JWT required):
 
-- synchronous HTTP through API gateway
+- `/api/v1/auth/login`
+- `/api/v1/auth/register`
+- `/auth/api/v1/auth/login`
+- `/auth/api/v1/auth/register`
+- `/health`
+- `/info`
+- `/api/v1/ping` (gateway ping)
 
-Planned:
+Protected routes (JWT required):
 
-- async event-driven integration (placeholder) for grading, notifications, integrity alerts, and analytics.
+- All other routes passing through gateway.
 
-## Security baseline
+When JWT is valid, gateway propagates user role as internal header:
 
-- Security dependency enabled in gateway and auth-service.
-- Current skeleton allows all requests (for local bootstrap only).
-- Future: JWT, role model, service-to-service auth, audit trails.
+- `X-User-Role: <ADMIN|TEACHER|STUDENT>`
 
-## Deployment target
+## Service-level authorization
 
-Planned deployment target is Railway.
+- `auth-service`: exposes register/login/me and issues JWT.
+- `content-service`:
+  - `GET /api/v1/ping` requires valid JWT.
+  - `POST /api/v1/temarios/test` requires role `ADMIN` or `TEACHER`.
 
-Pending work before production readiness:
+## Request flow examples
 
-- container orchestration strategy
-- secrets management
-- CI/CD release gates
-- observability (metrics/tracing/log correlation)
+Public auth flow:
+
+```text
+Client -> API Gateway -> auth-service (/api/v1/auth/login)
+auth-service -> JWT
+JWT -> Client
+```
+
+Protected flow:
+
+```text
+Client + Bearer JWT -> API Gateway
+API Gateway -> validates JWT -> forwards to service
+API Gateway -> adds X-User-Role header
+Service -> applies endpoint auth rules -> response
+```
+
