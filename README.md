@@ -6,7 +6,7 @@ Estado actual: **skeleton MVP** listo para comenzar desarrollo hoy.
 
 ## Stack
 
-- Backend: Java 21 + Spring Boot (microservices)
+- Backend: Java 25 + Spring Boot (microservices)
 - Gateway: Spring Cloud Gateway
 - Frontend: Angular 21
 - Data: PostgreSQL 16 + pgvector, Redis, MinIO
@@ -100,7 +100,7 @@ Mas detalle: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 ## Requisitos
 
 - Docker Desktop + Docker Compose
-- Java 21
+- Java 25
 - Maven 3.9+
 - Node.js 22+ y npm
 
