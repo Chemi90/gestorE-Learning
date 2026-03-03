@@ -21,6 +21,10 @@ spring:
             allowedHeaders:
               - "*"
       routes:
+        - id: auth-service-v1
+          uri: ${AUTH_SERVICE_URL:http://auth-service:8081}
+          predicates:
+            - Path=/api/v1/auth/**
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://auth-service:8081}
           predicates:
@@ -77,3 +81,7 @@ management:
         info: info
       exposure:
         include: health,info
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:01234567890123456789012345678901}
