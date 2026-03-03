@@ -9,6 +9,10 @@ export interface PingResponse {
   time: string;
 }
 
+export interface ProtectedResponse {
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -17,5 +21,9 @@ export class GatewayApiService {
 
   pingContentService(): Observable<PingResponse> {
     return this.http.get<PingResponse>(`${environment.API_BASE_URL}/content/api/v1/ping`);
+  }
+
+  testProtectedEndpoint(): Observable<ProtectedResponse> {
+    return this.http.post<ProtectedResponse>(`${environment.API_BASE_URL}/content/api/v1/temarios/test`, {});
   }
 }
