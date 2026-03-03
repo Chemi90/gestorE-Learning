@@ -1,0 +1,32 @@
+<main class="page">
+  <section class="card">
+    <p class="eyebrow">Autenticacion</p>
+    <h1>Iniciar sesion</h1>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="form">
+      <label>
+        Email
+        <input type="email" formControlName="email" placeholder="teacher@example.com" />
+      </label>
+
+      <label>
+        Password
+        <input type="password" formControlName="password" placeholder="password123" />
+      </label>
+
+      <button type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          Entrando...
+        } @else {
+          Entrar
+        }
+      </button>
+    </form>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <a routerLink="/home">Ir a home</a>
+  </section>
+</main>

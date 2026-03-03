@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:contentdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS content
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: content
+
+security:
+  jwt:
+    secret: 01234567890123456789012345678901

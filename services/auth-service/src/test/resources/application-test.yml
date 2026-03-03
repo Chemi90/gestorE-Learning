@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:authdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS auth
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: auth
+
+security:
+  jwt:
+    secret: 01234567890123456789012345678901
+    expiration-minutes: 60

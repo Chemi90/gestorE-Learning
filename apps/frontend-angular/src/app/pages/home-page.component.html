@@ -1,0 +1,28 @@
+<main class="page">
+  <section class="card">
+    <p class="eyebrow">Home</p>
+    <h1>Gestor e-Learning</h1>
+    <p class="subtitle">Rol actual: <strong>{{ role }}</strong></p>
+
+    <button type="button" (click)="testProtectedEndpoint()" [disabled]="isLoading()">
+      @if (isLoading()) {
+        Probando...
+      } @else {
+        Probar endpoint protegido
+      }
+    </button>
+
+    @if (errorMessage()) {
+      <pre class="result error">{{ errorMessage() }}</pre>
+    }
+
+    @if (result()) {
+      <pre class="result">{{ result() | json }}</pre>
+    }
+
+    <div class="actions">
+      <a routerLink="/login">Volver a login</a>
+      <button type="button" class="logout" (click)="logout()">Cerrar sesion</button>
+    </div>
+  </section>
+</main>
