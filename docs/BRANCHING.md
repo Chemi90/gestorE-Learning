@@ -1,39 +1,30 @@
-# Branching and PR Rules
+# Branching and PR Workflow
 
-## Main branches
+## Branch model
 
-- `main`: stable/releasable code only
-- `develop`: integration branch for upcoming release
+- `main`: production branch
+- `develop`: integration branch
+- `feature/*`: task development branches
 
-## Personal branches
+Recommended naming examples:
 
-Created from `develop`:
+- `feature/auth-jwt-phase1`
+- `feature/content-role-guards`
 
-- `jmruiz`
-- `acamacho`
-- `ldemicheli`
+## Pull request policy
 
-Use personal branches for daily work and draft integration.
-
-## Feature branches (recommended)
-
-For medium/large tasks, create branches from `develop` (or from your personal branch if team agrees):
-
-- `feature/<servicio>-<breve-descripcion>`
-- `svc/<servicio>/<tarea>`
-
-Examples:
-
-- `feature/content-catalog-crud`
-- `svc/rag/vector-index-bootstrap`
+- Every feature branch must open PR to `develop`.
+- Direct commits to `main` are not allowed.
+- Minimum code review: 1 approver.
+- PR author cannot self-approve.
 
 ## Merge policy
 
-- PR target should be `develop`
-- `main` accepts merges from `develop` only (release flow)
-- avoid long-lived branches per microservice as mainline branches
+- `main` receives changes only from `develop` (release merge).
+- `develop` receives changes from `feature/*` via PR.
+- Keep PRs small and focused.
 
-## Commit convention
+## Commit policy
 
 Use Conventional Commits:
 
@@ -45,15 +36,9 @@ Use Conventional Commits:
 
 ## PR checklist
 
-- clear scope and motivation
-- linked issue/task
-- local build/tests pass
-- docs updated when behavior changes
-- no secrets committed
+- Scope is clear and limited.
+- Local build and tests are green.
+- API/documentation changes are included when behavior changes.
+- No hardcoded secrets.
+- Rollback impact is identified for risky changes.
 
-## Definition of Done (baseline)
-
-- code compiles
-- tests added/updated and green
-- API changes documented
-- reviewer can run locally with documented steps
