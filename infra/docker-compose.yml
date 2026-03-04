@@ -50,6 +50,190 @@ services:
       retries: 10
       start_period: 20s
 
+  # --- Backend services ---
+
+  auth-service:
+    build:
+      context: ../
+      dockerfile: services/auth-service/Dockerfile
+    container_name: elearning-auth-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8081) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  content-service:
+    build:
+      context: ../
+      dockerfile: services/content-service/Dockerfile
+    container_name: elearning-content-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8082) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  rag-service:
+    build:
+      context: ../
+      dockerfile: services/rag-service/Dockerfile
+    container_name: elearning-rag-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8083) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  exam-service:
+    build:
+      context: ../
+      dockerfile: services/exam-service/Dockerfile
+    container_name: elearning-exam-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8084) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  grading-service:
+    build:
+      context: ../
+      dockerfile: services/grading-service/Dockerfile
+    container_name: elearning-grading-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8085) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  integrity-service:
+    build:
+      context: ../
+      dockerfile: services/integrity-service/Dockerfile
+    container_name: elearning-integrity-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-elearning}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-elearning}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8086) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  llm-orchestrator:
+    build:
+      context: ../
+      dockerfile: services/llm-orchestrator/Dockerfile
+    container_name: elearning-llm-orchestrator
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8087) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: ../
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: elearning-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_ALLOWED_ORIGINS: http://localhost:4200
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      content-service:
+        condition: service_healthy
+      rag-service:
+        condition: service_healthy
+      exam-service:
+        condition: service_healthy
+      grading-service:
+        condition: service_healthy
+      integrity-service:
+        condition: service_healthy
+      llm-orchestrator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '(echo > /dev/tcp/localhost/8080) 2>/dev/null'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # --- Frontend ---
+
+  frontend:
+    build:
+      context: ../apps/frontend-angular
+      dockerfile: Dockerfile
+    container_name: elearning-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   minio_data:
