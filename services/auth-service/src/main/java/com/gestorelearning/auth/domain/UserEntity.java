@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -32,7 +34,8 @@ public class UserEntity {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "auth.user_role")
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     private UserRole role;
 
     @ManyToOne(fetch = FetchType.LAZY)
