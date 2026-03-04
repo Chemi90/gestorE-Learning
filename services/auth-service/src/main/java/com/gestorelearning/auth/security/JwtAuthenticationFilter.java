@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,6 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return path.equals("/api/v1/auth/login")
                 || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/auth/organizations")
+                || path.equals("/api/v1/ping")
                 || path.equals("/health")
                 || path.equals("/info");
     }
@@ -51,13 +54,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtService.parseClaims(token);
             String email = claims.getSubject();
             String role = claims.get("role", String.class);
+            String organizationId = claims.get("organizationId", String.class);
 
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && role != null && organizationId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role))
                 );
+                
+                authentication.setDetails(Map.of("organizationId", organizationId));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JwtException ex) {

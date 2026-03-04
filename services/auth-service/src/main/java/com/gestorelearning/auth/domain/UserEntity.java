@@ -4,28 +4,43 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users", schema = "auth")
+@Table(
+    name = "users", 
+    schema = "auth",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"email", "organization_id"})
+)
 public class UserEntity {
 
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "auth.user_role")
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     private UserRole role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private OrganizationEntity organization;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -73,6 +88,14 @@ public class UserEntity {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public OrganizationEntity getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(OrganizationEntity organization) {
+        this.organization = organization;
     }
 
     public Instant getCreatedAt() {
