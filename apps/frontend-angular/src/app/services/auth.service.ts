@@ -17,9 +17,9 @@ export class AuthService {
   private readonly token = signal<string | null>(null);
   private readonly role = signal<LoginResponse['role'] | null>(null);
 
-  login(email: string, password: string): Observable<LoginResponse> {
+  login(email: string, password: string, organizationId?: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${environment.API_BASE_URL}/api/v1/auth/login`, { email, password })
+      .post<LoginResponse>(`${environment.API_BASE_URL}/api/v1/auth/login`, { email, password, organizationId })
       .pipe(
         tap((response) => {
           this.token.set(response.accessToken);
