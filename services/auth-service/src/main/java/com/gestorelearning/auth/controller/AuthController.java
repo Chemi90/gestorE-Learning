@@ -3,9 +3,13 @@ package com.gestorelearning.auth.controller;
 import com.gestorelearning.auth.dto.AuthUserResponse;
 import com.gestorelearning.auth.dto.LoginRequest;
 import com.gestorelearning.auth.dto.LoginResponse;
+import com.gestorelearning.auth.dto.OrganizationResponse;
 import com.gestorelearning.auth.dto.RegisterRequest;
 import com.gestorelearning.auth.service.AuthService;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +27,11 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @GetMapping("/organizations")
+    public List<OrganizationResponse> getAllOrganizations() {
+        return authService.getAllOrganizations();
+    }
+
     @PostMapping("/register")
     public AuthUserResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
@@ -34,7 +43,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @SuppressWarnings("unchecked")
     public AuthUserResponse me(Authentication authentication) {
-        return authService.me(authentication.getName());
+        Map<String, Object> details = (Map<String, Object>) authentication.getDetails();
+        String orgIdStr = (String) details.get("organizationId");
+        return authService.me(authentication.getName(), UUID.fromString(orgIdStr));
     }
 }

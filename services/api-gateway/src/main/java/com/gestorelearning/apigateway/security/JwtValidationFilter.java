@@ -26,8 +26,10 @@ public class JwtValidationFilter implements GlobalFilter, Ordered {
             "/api/v1/ping",
             "/api/v1/auth/login",
             "/api/v1/auth/register",
+            "/api/v1/auth/organizations",
             "/auth/api/v1/auth/login",
-            "/auth/api/v1/auth/register"
+            "/auth/api/v1/auth/register",
+            "/auth/api/v1/auth/organizations"
     );
 
     private final JwtService jwtService;
@@ -55,13 +57,15 @@ public class JwtValidationFilter implements GlobalFilter, Ordered {
         try {
             Claims claims = jwtService.parseClaims(token);
             String role = claims.get("role", String.class);
+            String organizationId = claims.get("organizationId", String.class);
 
-            if (role == null || role.isBlank()) {
-                return unauthorized(exchange, "Missing role claim");
+            if (role == null || role.isBlank() || organizationId == null || organizationId.isBlank()) {
+                return unauthorized(exchange, "Missing security claims");
             }
 
             ServerHttpRequest mutatedRequest = request.mutate()
                     .header("X-User-Role", role)
+                    .header("X-Organization-Id", organizationId)
                     .build();
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
