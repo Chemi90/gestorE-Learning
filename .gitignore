@@ -38,4 +38,5 @@ yarn-error.log*
 
 # VSCode workspace settings generated locally
 **/.vscode/settings.json
+*.code-workspace
 
