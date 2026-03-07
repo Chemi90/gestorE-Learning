@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,13 +28,14 @@ public class JwtService {
         this.expirationMinutes = expirationMinutes;
     }
 
-    public String generateToken(String email, UserRole role) {
+    public String generateToken(String email, UserRole role, UUID organizationId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(expirationMinutes, ChronoUnit.MINUTES);
 
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role.name())
+                .claim("organizationId", organizationId.toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .signWith(signingKey)
