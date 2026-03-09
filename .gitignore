@@ -40,3 +40,8 @@ yarn-error.log*
 **/.vscode/settings.json
 *.code-workspace
 
+
+# Engram AI agent memory
+.engram/
+GEMINI.md
+start_dev.bat
