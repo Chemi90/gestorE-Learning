@@ -5,6 +5,16 @@
 
     <form [formGroup]="loginForm" (ngSubmit)="submit()" class="form">
       <label>
+        Organizacion
+        <select formControlName="organizationId">
+          <option value="" disabled selected>Selecciona una organizacion</option>
+          @for (org of organizations(); track org.id) {
+            <option [value]="org.id">{{ org.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
         Email
         <input type="email" formControlName="email" placeholder="teacher@example.com" />
       </label>
