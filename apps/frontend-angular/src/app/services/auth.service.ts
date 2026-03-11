@@ -11,20 +11,26 @@ import { UserRole } from '../core/types/user-role.type';
 export class AuthService {
   private readonly http = inject(HttpClient);
 
-  private readonly token = signal<string | null>(null);
-  private readonly role = signal<UserRole | null>(null);
+  private readonly token = signal<string | null>(localStorage.getItem('token'));
+  private readonly role = signal<UserRole | null>(localStorage.getItem('role') as UserRole);
+  private readonly organizationId = signal<string | null>(localStorage.getItem('organizationId'));
 
   getOrganizations(): Observable<OrganizationResponse[]> {
-    return this.http.get<OrganizationResponse[]>(`${environment.API_BASE_URL}/api/v1/auth/organizations`);
+    return this.http.get<OrganizationResponse[]>(`${environment.API_BASE_URL}/auth/api/v1/auth/organizations`);
   }
 
   login(email: string, password: string, organizationId: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${environment.API_BASE_URL}/api/v1/auth/login`, { email, password, organizationId })
+      .post<LoginResponse>(`${environment.API_BASE_URL}/auth/api/v1/auth/login`, { email, password, organizationId })
       .pipe(
         tap((response) => {
           this.token.set(response.accessToken);
           this.role.set(response.role);
+          this.organizationId.set(organizationId);
+          
+          localStorage.setItem('token', response.accessToken);
+          localStorage.setItem('role', response.role);
+          localStorage.setItem('organizationId', organizationId);
         })
       );
   }
@@ -37,8 +43,14 @@ export class AuthService {
     return this.role();
   }
 
+  getOrganizationId(): string | null {
+    return this.organizationId();
+  }
+
   logout(): void {
     this.token.set(null);
     this.role.set(null);
+    this.organizationId.set(null);
+    localStorage.clear();
   }
 }

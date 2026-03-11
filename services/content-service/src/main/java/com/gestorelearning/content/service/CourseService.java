@@ -39,7 +39,6 @@ public class CourseService {
 
     @Transactional
     public CourseTreeResponse createFullCourse(CreateCourseBulkRequest request) {
-        // 1. Crear Curso
         CourseEntity course = new CourseEntity();
         course.setTitle(request.title());
         course.setDescription(request.description());
@@ -49,17 +48,43 @@ public class CourseService {
         course.setActive(true);
         CourseEntity savedCourse = courseRepository.save(course);
 
-        // 2. Procesar Módulos
-        if (request.modules() != null) {
-            for (CreateModuleRequest modReq : request.modules()) {
+        saveModules(savedCourse, request.modules());
+
+        return getCourseTree(savedCourse.getId());
+    }
+
+    @Transactional
+    public CourseResponse updateCourseWithTree(UUID id, CreateCourseBulkRequest request) {
+        CourseEntity course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+        
+        course.setTitle(request.title());
+        course.setDescription(request.description());
+        course.setLevel(request.level());
+        course.setVersion(request.version());
+        
+        CourseEntity savedCourse = courseRepository.save(course);
+
+        // Borrar módulos antiguos y forzar sincronización con la BD para liberar los order_index
+        List<ModuleEntity> oldModules = moduleRepository.findByCourseIdOrderByOrderIndexAsc(id);
+        moduleRepository.deleteAll(oldModules);
+        moduleRepository.flush(); // IMPORTANTE: Evita el error de unique constraint uk_module_course_order
+
+        saveModules(savedCourse, request.modules());
+
+        return mapToCourseResponse(savedCourse);
+    }
+
+    private void saveModules(CourseEntity course, List<CreateModuleRequest> moduleRequests) {
+        if (moduleRequests != null) {
+            for (CreateModuleRequest modReq : moduleRequests) {
                 ModuleEntity module = new ModuleEntity();
-                module.setCourse(savedCourse);
+                module.setCourse(course);
                 module.setTitle(modReq.title());
                 module.setSummary(modReq.summary());
                 module.setOrderIndex(modReq.orderIndex());
                 ModuleEntity savedMod = moduleRepository.save(module);
 
-                // 3. Procesar Unidades
                 if (modReq.units() != null) {
                     for (CreateUnitRequest unitReq : modReq.units()) {
                         UnitEntity unit = new UnitEntity();
@@ -70,7 +95,6 @@ public class CourseService {
                         unit.setOrderIndex(unitReq.orderIndex());
                         UnitEntity savedUnit = unitRepository.save(unit);
 
-                        // 4. Procesar Objetivos de la Unidad
                         if (unitReq.objectives() != null) {
                             for (CreateObjectiveRequest objReq : unitReq.objectives()) {
                                 ObjectiveEntity objective = new ObjectiveEntity();
@@ -83,8 +107,6 @@ public class CourseService {
                 }
             }
         }
-
-        return getCourseTree(savedCourse.getId());
     }
 
     @Transactional
@@ -107,6 +129,14 @@ public class CourseService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
         course.setActive(false); // Borrado lógico
         courseRepository.save(course);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getCoursesByOrganization(UUID organizationId) {
+        return courseRepository.findByOrganizationId(organizationId).stream()
+                .filter(CourseEntity::isActive) // Solo cursos activos
+                .map(this::mapToCourseResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
