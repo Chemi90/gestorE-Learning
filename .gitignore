@@ -45,3 +45,4 @@ yarn-error.log*
 .engram/
 GEMINI.md
 start_dev.bat
+.agent/specs/archivados
