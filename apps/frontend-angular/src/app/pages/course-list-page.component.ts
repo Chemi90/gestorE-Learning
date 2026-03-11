@@ -22,11 +22,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
       </div>
 
       <div class="filters">
-        <label for="levelFilter">Filter by Level:</label>
-        <select id="levelFilter" [formControl]="levelFilterControl">
-          <option value="">All Levels</option>
-          <option *ngFor="let level of levels" [value]="level">{{ level }}</option>
-        </select>
+        <label>
+          Filter by Level:
+          <select [formControl]="levelFilterControl">
+            <option value="">All Levels</option>
+            <option *ngFor="let level of levels" [value]="level">{{ level }}</option>
+          </select>
+        </label>
       </div>
 
       <div class="course-grid">
@@ -64,6 +66,38 @@ import { toSignal } from '@angular/core/rxjs-interop';
     }
     .filters {
       margin-bottom: 2rem;
+      max-width: 300px;
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #4a3f35;
+      }
+
+      select {
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e0d7d0;
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238c7365'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+        padding-right: 2.5rem;
+
+        &:focus {
+          border-color: #d9773e;
+          box-shadow: 0 0 0 3px rgba(217, 119, 62, 0.1);
+        }
+      }
     }
     .course-grid {
       display: grid;

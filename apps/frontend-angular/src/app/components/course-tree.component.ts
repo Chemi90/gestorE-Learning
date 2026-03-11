@@ -131,9 +131,11 @@ export class CourseTreeComponent {
   }
 
   addModule() {
+    const currentLength = this.modules.length;
     const moduleGroup = this.fb.group({
       title: ['', Validators.required],
       summary: [''],
+      orderIndex: [currentLength],
       units: this.fb.array([])
     });
     this.modules.push(moduleGroup);
@@ -144,13 +146,15 @@ export class CourseTreeComponent {
   }
 
   addUnit(moduleIndex: number) {
+    const unitsArray = this.getUnits(moduleIndex);
     const unitGroup = this.fb.group({
       title: ['', Validators.required],
       contentPlaceholder: [''],
       resourceType: [ResourceType.TEXT, Validators.required],
+      orderIndex: [unitsArray.length],
       objectives: this.fb.array([])
     });
-    this.getUnits(moduleIndex).push(unitGroup);
+    unitsArray.push(unitGroup);
   }
 
   removeUnit(moduleIndex: number, unitIndex: number) {

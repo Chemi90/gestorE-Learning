@@ -153,29 +153,23 @@ export class CourseEditorPageComponent implements OnInit {
     });
 
     // Reconstruct modules
-    tree.modules?.forEach(mod => {
+    tree.modules?.forEach((mod, mIndex) => {
       const modGroup = this.fb.group({
         title: [mod.title, Validators.required],
         summary: [mod.summary],
+        orderIndex: [mod.orderIndex ?? mIndex],
         units: this.fb.array([])
       });
 
-      mod.units?.forEach(unit => {
+      mod.units?.forEach((unit, uIndex) => {
         const unitGroup = this.fb.group({
           title: [unit.title, Validators.required],
           contentPlaceholder: [unit.contentPlaceholder],
           resourceType: [unit.resourceType || ResourceType.TEXT, Validators.required],
+          orderIndex: [unit.orderIndex ?? uIndex],
           objectives: this.fb.array([])
         });
 
-        unit.objectives?.forEach(obj => {
-          unitGroup.get('objectives')?.value.push(
-             this.fb.group({ description: [obj.description, Validators.required] })
-          );
-          // Wait, fb.array doesn't work by just pushing to value. We must use .push on FormArray
-        });
-        
-        // Correct way for objectives:
         const objArray = unitGroup.get('objectives') as any;
         unit.objectives?.forEach(obj => {
           objArray.push(this.fb.group({ description: [obj.description, Validators.required] }));
@@ -189,20 +183,43 @@ export class CourseEditorPageComponent implements OnInit {
   }
 
   saveCourse() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      console.warn('Form is invalid', this.form.errors);
+      return;
+    }
 
     const payload = this.form.getRawValue();
+    
+    // RECALCULAR INDICES: Asegura que siempre sean secuenciales (1, 2, 3...) y sin duplicados
+    if (payload.modules) {
+      payload.modules.forEach((mod: any, mIndex: number) => {
+        mod.orderIndex = mIndex + 1;
+        if (mod.units) {
+          mod.units.forEach((unit: any, uIndex: number) => {
+            unit.orderIndex = uIndex + 1;
+          });
+        }
+      });
+    }
+
+    console.log('Saving course with payload:', JSON.stringify(payload, null, 2));
 
     if (this.isNewCourse) {
+      console.log('Calling createFullCourse...');
       this.courseService.createFullCourse(payload).subscribe({
-        next: () => this.router.navigate(['/courses']),
+        next: (res) => {
+          console.log('Course created successfully:', res);
+          this.router.navigate(['/courses']);
+        },
         error: (err) => console.error('Error creating course', err)
       });
     } else if (this.courseId) {
-      // En este caso el endpoint /bulk sirve para crear, pero la actualizacion de arbol quizas sea diferente.
-      // Si el backend no tiene un update de arbol completo, podriamos actualizar la base del curso con updateCourse
+      console.log('Calling updateCourse for ID:', this.courseId);
       this.courseService.updateCourse(this.courseId, payload).subscribe({
-        next: () => this.router.navigate(['/courses']),
+        next: (res) => {
+          console.log('Course updated successfully:', res);
+          this.router.navigate(['/courses']);
+        },
         error: (err) => console.error('Error updating course', err)
       });
     }

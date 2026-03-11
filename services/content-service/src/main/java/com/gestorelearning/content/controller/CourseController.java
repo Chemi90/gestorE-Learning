@@ -40,8 +40,8 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
-    public CourseResponse updateCourse(@PathVariable UUID id, @Valid @RequestBody CreateCourseRequest request) {
-        return courseService.updateCourse(id, request);
+    public CourseResponse updateCourse(@PathVariable UUID id, @Valid @RequestBody CreateCourseBulkRequest request) {
+        return courseService.updateCourseWithTree(id, request);
     }
 
     @DeleteMapping("/{id}")
