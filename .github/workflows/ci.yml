@@ -32,7 +32,7 @@ jobs:
           cache: maven
 
       - name: Build and test backend modules
-        run: mvn -B -ntp -f services/pom.xml test
+        run: mvn -B -ntp test
 
   frontend:
     name: Frontend Angular Build
