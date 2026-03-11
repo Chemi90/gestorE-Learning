@@ -49,11 +49,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = claims.get("role", String.class);
 
             if (email != null && role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String organizationId = claims.get("organizationId", String.class);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role))
                 );
+                if (organizationId != null) {
+                    authentication.setDetails(java.util.Map.of("organizationId", organizationId));
+                }
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JwtException ex) {

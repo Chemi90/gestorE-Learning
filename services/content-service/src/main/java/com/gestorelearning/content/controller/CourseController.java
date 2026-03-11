@@ -22,6 +22,18 @@ public class CourseController {
         return courseService.createFullCourse(request);
     }
 
+    @GetMapping
+    @SuppressWarnings("unchecked")
+    public java.util.List<CourseResponse> getCourses(org.springframework.security.core.Authentication authentication) {
+        java.util.Map<String, Object> details = (java.util.Map<String, Object>) authentication.getDetails();
+        String orgIdStr = (String) details.get("organizationId");
+        if (orgIdStr == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "No organizationId in JWT");
+        }
+        return courseService.getCoursesByOrganization(UUID.fromString(orgIdStr));
+    }
+
     @GetMapping("/{id}")
     public CourseResponse getCourseById(@PathVariable UUID id) {
         return courseService.getCourseById(id);

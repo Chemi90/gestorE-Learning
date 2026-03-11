@@ -110,6 +110,14 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
+    public List<CourseResponse> getCoursesByOrganization(UUID organizationId) {
+        return courseRepository.findByOrganizationId(organizationId).stream()
+                .filter(CourseEntity::isActive) // Solo cursos activos
+                .map(this::mapToCourseResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public CourseResponse getCourseById(UUID id) {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));

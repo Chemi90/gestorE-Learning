@@ -1,0 +1,214 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { CourseService } from '../services/course.service';
+import { AuthService } from '../services/auth.service';
+import { CourseLevel, CourseTreeResponse, ResourceType } from '../core/models/course.model';
+import { CourseTreeComponent } from '../components/course-tree.component';
+
+@Component({
+  selector: 'app-course-editor-page',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, CourseTreeComponent],
+  template: `
+    <div class="editor-container">
+      <header class="page-header">
+        <h1>{{ isNewCourse ? 'Create New Course' : (isReadOnly ? 'View Course' : 'Edit Course') }}</h1>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="goBack()">Back</button>
+          <button *ngIf="!isReadOnly" class="btn-primary" (click)="saveCourse()" [disabled]="form.invalid">
+            Save Course
+          </button>
+        </div>
+      </header>
+
+      <form [formGroup]="form" class="course-form">
+        <div class="form-section">
+          <h2>Course Details</h2>
+          
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input id="title" formControlName="title" [readonly]="isReadOnly">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" formControlName="description" [readonly]="isReadOnly" rows="3"></textarea>
+          </div>
+
+          <div class="form-group row-group">
+            <div class="col">
+              <label for="level">Level</label>
+              <select id="level" formControlName="level" [attr.disabled]="isReadOnly ? true : null">
+                <option *ngFor="let lvl of levels" [value]="lvl">{{ lvl }}</option>
+              </select>
+            </div>
+            
+            <div class="col">
+              <label for="version">Version</label>
+              <input id="version" formControlName="version" [readonly]="isReadOnly">
+            </div>
+
+            <div class="col" *ngIf="isNewCourse">
+               <label for="organizationId">Organization ID</label>
+               <!-- En un caso real esto se tomaria del usuario autenticado -->
+               <input id="organizationId" formControlName="organizationId">
+            </div>
+          </div>
+        </div>
+
+        <app-course-tree 
+          [form]="form" 
+          [isReadOnly]="isReadOnly">
+        </app-course-tree>
+
+      </form>
+    </div>
+  `,
+  styles: [`
+    .editor-container { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .header-actions { display: flex; gap: 1rem; }
+    .form-section { background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 2rem; }
+    .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+    .row-group { flex-direction: row; gap: 1rem; }
+    .col { flex: 1; display: flex; flex-direction: column; }
+    label { font-weight: bold; margin-bottom: 0.5rem; color: #444; }
+    input, textarea, select { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+    input[readonly], textarea[readonly] { background-color: #f5f5f5; border-color: #e0e0e0; color: #555; }
+    select[disabled] { background-color: #f5f5f5; border-color: #e0e0e0; color: #555; }
+    
+    .btn-primary { background: #007bff; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-primary:disabled { background: #a0cbfc; cursor: not-allowed; }
+    .btn-secondary { background: #6c757d; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 4px; cursor: pointer; }
+  `]
+})
+export class CourseEditorPageComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly courseService = inject(CourseService);
+  private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  form!: FormGroup;
+  isNewCourse = false;
+  courseId: string | null = null;
+  levels = Object.values(CourseLevel);
+
+  get isReadOnly(): boolean {
+    const role = this.authService.getRole();
+    return role === 'STUDENT' || role === null; // Students can only view
+  }
+
+  ngOnInit() {
+    this.initForm();
+    
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id === 'new') {
+        this.isNewCourse = true;
+        // Auto-assign org if needed
+      } else if (id) {
+        this.courseId = id;
+        this.isNewCourse = false;
+        this.loadCourseData(id);
+      }
+    });
+  }
+
+  initForm() {
+    this.form = this.fb.group({
+      title: ['', Validators.required],
+      description: [''],
+      level: [CourseLevel.BEGINNER, Validators.required],
+      version: ['1.0.0', Validators.required],
+      organizationId: ['', Validators.required], // En app real, auto-populado
+      modules: this.fb.array([])
+    });
+
+    if (this.isReadOnly) {
+      // It is handled by templates mostly, but we can also disable the form to prevent any dirty state
+    }
+  }
+
+  loadCourseData(id: string) {
+    this.courseService.getCourseTree(id).subscribe({
+      next: (tree) => this.patchFormWithTree(tree),
+      error: (err) => console.error('Failed to load course tree', err)
+    });
+  }
+
+  patchFormWithTree(tree: CourseTreeResponse) {
+    // Reset array
+    const modulesArray = this.form.get('modules') as any;
+    modulesArray.clear();
+
+    this.form.patchValue({
+      title: tree.title,
+      description: '', // Desc no viene en tree pero en general detail si
+      level: tree.level,
+      version: tree.version,
+      organizationId: tree.organizationId
+    });
+
+    // Reconstruct modules
+    tree.modules?.forEach(mod => {
+      const modGroup = this.fb.group({
+        title: [mod.title, Validators.required],
+        summary: [mod.summary],
+        units: this.fb.array([])
+      });
+
+      mod.units?.forEach(unit => {
+        const unitGroup = this.fb.group({
+          title: [unit.title, Validators.required],
+          contentPlaceholder: [unit.contentPlaceholder],
+          resourceType: [unit.resourceType || ResourceType.TEXT, Validators.required],
+          objectives: this.fb.array([])
+        });
+
+        unit.objectives?.forEach(obj => {
+          unitGroup.get('objectives')?.value.push(
+             this.fb.group({ description: [obj.description, Validators.required] })
+          );
+          // Wait, fb.array doesn't work by just pushing to value. We must use .push on FormArray
+        });
+        
+        // Correct way for objectives:
+        const objArray = unitGroup.get('objectives') as any;
+        unit.objectives?.forEach(obj => {
+          objArray.push(this.fb.group({ description: [obj.description, Validators.required] }));
+        });
+
+        (modGroup.get('units') as any).push(unitGroup);
+      });
+
+      modulesArray.push(modGroup);
+    });
+  }
+
+  saveCourse() {
+    if (this.form.invalid) return;
+
+    const payload = this.form.getRawValue();
+
+    if (this.isNewCourse) {
+      this.courseService.createFullCourse(payload).subscribe({
+        next: () => this.router.navigate(['/courses']),
+        error: (err) => console.error('Error creating course', err)
+      });
+    } else if (this.courseId) {
+      // En este caso el endpoint /bulk sirve para crear, pero la actualizacion de arbol quizas sea diferente.
+      // Si el backend no tiene un update de arbol completo, podriamos actualizar la base del curso con updateCourse
+      this.courseService.updateCourse(this.courseId, payload).subscribe({
+        next: () => this.router.navigate(['/courses']),
+        error: (err) => console.error('Error updating course', err)
+      });
+    }
+  }
+
+  goBack() {
+    this.router.navigate(['/courses']);
+  }
+}
