@@ -19,10 +19,21 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Testcontainers
 class ContentSecurityIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withInitScript("init-test.sql");
 
     private static final String SECRET = "01234567890123456789012345678901";
 
@@ -36,20 +47,22 @@ class ContentSecurityIntegrationTest {
     }
 
     @Test
-    void temarioTestWithTeacherRoleReturns200() throws Exception {
-        String token = createToken("TEACHER");
+    void coursesGetWithStudentRoleReturns404() throws Exception {
+        String token = createToken("STUDENT");
+        String dummyUuid = "123e4567-e89b-12d3-a456-426614174000";
 
-        mockMvc.perform(post("/api/v1/temarios/test")
+        // Un STUDENT tiene permiso para leer, así que llegará al controlador y dará 404 (porque no existe)
+        mockMvc.perform(get("/api/v1/courses/" + dummyUuid)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("ok protegido"));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void temarioTestWithStudentRoleReturns403() throws Exception {
+    void coursesPostWithStudentRoleReturns403() throws Exception {
         String token = createToken("STUDENT");
 
-        mockMvc.perform(post("/api/v1/temarios/test")
+        // Un STUDENT NO tiene permiso para crear (POST), así que dará 403 Forbidden
+        mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
     }

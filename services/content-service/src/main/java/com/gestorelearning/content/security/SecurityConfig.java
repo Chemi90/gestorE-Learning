@@ -2,6 +2,7 @@ package com.gestorelearning.content.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -28,9 +29,16 @@ public class SecurityConfig {
                 ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health", "/info").permitAll()
-                        .requestMatchers("/api/v1/temarios/test").hasAnyRole("ADMIN", "TEACHER")
+                        // Lectura de cursos: ADMIN, TEACHER y STUDENT pueden ver
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        // Escritura de cursos: Solo ADMIN y TEACHER pueden modificar
+                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
+                        // Ping: Cualquier usuario autenticado
                         .requestMatchers("/api/v1/ping").authenticated()
-                        .anyRequest().permitAll()
+                        // Cerrar por defecto: cualquier otra ruta requiere estar logueado
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
