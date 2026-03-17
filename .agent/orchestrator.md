@@ -72,7 +72,8 @@ Al terminar cada cambio:
 | `testing.md`       | Escribir o modificar tests JUnit 5 / MockMvc / H2 / Vitest           |
 | `frontend.md`      | Componentes Angular, services, interceptores, rutas                  |
 | `docker.md`        | Dockerfiles, docker-compose, healthchecks, infra local               |
-| `gateway.md`       | Rutas del gateway, StripPrefix, JwtValidationFilter, CORS            |
+| `gateway.md`      | Rutas del gateway, StripPrefix, JwtValidationFilter, CORS            |
+| `llm-orchestrator.md` | Generacion de temarios, pipeline de prompts (Macro/Meso/Micro), validacion JSON |
 | `skill-creator.md` | Cuando ningun skill existente cubre la necesidad                     |
 
 ## Enrutamiento de Skills por Tipo de Tarea
@@ -85,6 +86,7 @@ tarea contiene "test" o "prueba"                → testing.md
 tarea contiene "Angular" o "componente" o "UI"  → frontend.md
 tarea contiene "Docker" o "compose" o "imagen"  → docker.md
 tarea contiene "gateway" o "ruta" o "proxy"     → gateway.md
+tarea contiene "prompt" o "temario" o "AI index" → llm-orchestrator.md
 tarea contiene "nuevo servicio"                 → structure.md + db.md + docker.md + gateway.md
 ```
 
