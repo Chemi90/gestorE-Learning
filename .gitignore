@@ -46,3 +46,5 @@ yarn-error.log*
 GEMINI.md
 start_dev.bat
 .agent/specs/archivados
+.gemini
+.gemini/settings.json
