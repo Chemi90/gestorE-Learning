@@ -5,17 +5,18 @@ import com.gestorelearning.common.domain.CourseLevel;
 import com.gestorelearning.common.dto.CourseTreeResponse;
 import com.gestorelearning.common.dto.CreateCourseBulkRequest;
 import com.gestorelearning.common.dto.CreateModuleRequest;
+import com.gestorelearning.common.dto.CreateUnitRequest;
+import com.gestorelearning.llmorchestrator.service.ValidationService;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,6 +24,63 @@ public class CourseOrchestrationIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ValidationService validationService;
+
+    @Test
+    void testFullTreeValidationFailure() throws Exception {
+        // 1. JSON de curso con un módulo que contiene una unidad INVALIDA (sin resourceType)
+        String invalidTreeJson = """
+        {
+            "title": "Master IA",
+            "level": "ADVANCED",
+            "version": "1.0.0",
+            "organizationId": "550e8400-e29b-41d4-a716-446655440000",
+            "modules": [
+                {
+                    "title": "Modulo 1",
+                    "orderIndex": 0,
+                    "units": [
+                        {
+                            "title": "Unidad con error",
+                            "orderIndex": 0
+                        }
+                    ]
+                }
+            ]
+        }
+        """;
+
+        CreateCourseBulkRequest invalidTree = objectMapper.readValue(invalidTreeJson, CreateCourseBulkRequest.class);
+        
+        // 2. Al validar el objeto RAÍZ, el validador debe entrar en cascada hasta la unidad y fallar
+        assertThrows(ConstraintViolationException.class, () -> {
+            validationService.validate(invalidTree);
+        });
+    }
+
+    @Test
+    void testInvalidUnitValidation() throws Exception {
+        // 1. JSON de unidad sin ResourceType (que es @NotNull en CreateUnitRequest)
+        String invalidUnitJson = """
+        {
+            "title": "Unidad sin recurso",
+            "contentPlaceholder": "Texto...",
+            "orderIndex": 1
+        }
+        """;
+
+        // 2. Jackson lo parsea (porque Jackson por sí solo no valida anotaciones de Bean Validation)
+        CreateUnitRequest invalidUnit = objectMapper.readValue(invalidUnitJson, CreateUnitRequest.class);
+        assertNotNull(invalidUnit);
+        assertNull(invalidUnit.resourceType());
+
+        // 3. Nuestro ValidationService DEBE lanzar la excepción
+        assertThrows(ConstraintViolationException.class, () -> {
+            validationService.validate(invalidUnit);
+        });
+    }
 
     @Test
     void testExportImportMapping() throws Exception {

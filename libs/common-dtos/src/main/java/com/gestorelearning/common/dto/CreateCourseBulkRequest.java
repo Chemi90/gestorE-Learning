@@ -1,6 +1,7 @@
 package com.gestorelearning.common.dto;
 
 import com.gestorelearning.common.domain.CourseLevel;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -12,5 +13,5 @@ public record CreateCourseBulkRequest(
         @NotNull CourseLevel level,
         @NotBlank String version,
         @NotNull UUID organizationId,
-        List<CreateModuleRequest> modules
+        @Valid List<CreateModuleRequest> modules
 ) {}
