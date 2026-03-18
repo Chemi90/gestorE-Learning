@@ -73,6 +73,7 @@ Al terminar cada cambio:
 | `frontend.md`      | Componentes Angular, services, interceptores, rutas                  |
 | `docker.md`        | Dockerfiles, docker-compose, healthchecks, infra local               |
 | `gateway.md`      | Rutas del gateway, StripPrefix, JwtValidationFilter, CORS            |
+| `storage.md`       | MinIO, subida de archivos, S3, persistencia de objetos binarios      |
 | `llm-orchestrator.md` | Generacion de temarios, pipeline de prompts (Macro/Meso/Micro), validacion JSON |
 | `skill-creator.md` | Cuando ningun skill existente cubre la necesidad                     |
 
