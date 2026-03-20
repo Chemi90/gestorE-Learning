@@ -1,22 +1,18 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, of } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AuthService } from './auth.service';
 import {
-  CourseLevel,
   CourseResponse,
   CourseTreeResponse,
   CreateCourseBulkRequest,
-  CreateCourseRequest
 } from '../core/models/course.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CourseService {
   private readonly http = inject(HttpClient);
-  private readonly authService = inject(AuthService);
   private readonly apiUrl = `${environment.API_BASE_URL}/content/api/v1/courses`;
 
   private readonly coursesSignal = signal<CourseResponse[]>([]);
@@ -31,9 +27,9 @@ export class CourseService {
   }
 
   getCourses(): Observable<CourseResponse[]> {
-    return this.http.get<CourseResponse[]>(this.apiUrl).pipe(
-      tap((courses) => this.coursesSignal.set(courses))
-    );
+    return this.http
+      .get<CourseResponse[]>(this.apiUrl)
+      .pipe(tap((courses) => this.coursesSignal.set(courses)));
   }
 
   getCourseById(id: string): Observable<CourseResponse> {
@@ -41,18 +37,18 @@ export class CourseService {
   }
 
   getCourseTree(id: string): Observable<CourseTreeResponse> {
-    return this.http.get<CourseTreeResponse>(`${this.apiUrl}/${id}/tree`).pipe(
-      tap((tree) => this.activeCourseTreeSignal.set(tree))
-    );
+    return this.http
+      .get<CourseTreeResponse>(`${this.apiUrl}/${id}/tree`)
+      .pipe(tap((tree) => this.activeCourseTreeSignal.set(tree)));
   }
 
   createFullCourse(request: CreateCourseBulkRequest): Observable<CourseTreeResponse> {
-    return this.http.post<CourseTreeResponse>(`${this.apiUrl}/bulk`, request).pipe(
-      tap((tree) => this.activeCourseTreeSignal.set(tree))
-    );
+    return this.http
+      .post<CourseTreeResponse>(`${this.apiUrl}/bulk`, request)
+      .pipe(tap((tree) => this.activeCourseTreeSignal.set(tree)));
   }
 
-  updateCourse(id: string, request: CreateCourseRequest): Observable<CourseResponse> {
+  updateCourse(id: string, request: CreateCourseBulkRequest): Observable<CourseResponse> {
     return this.http.put<CourseResponse>(`${this.apiUrl}/${id}`, request);
   }
 
@@ -60,11 +56,11 @@ export class CourseService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => {
         const currentCourses = this.coursesSignal();
-        this.coursesSignal.set(currentCourses.filter(c => c.id !== id));
+        this.coursesSignal.set(currentCourses.filter((c) => c.id !== id));
         if (this.activeCourseTreeSignal()?.courseId === id) {
           this.activeCourseTreeSignal.set(null);
         }
-      })
+      }),
     );
   }
 

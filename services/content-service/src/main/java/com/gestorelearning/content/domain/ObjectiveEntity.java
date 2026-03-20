@@ -13,8 +13,8 @@ public class ObjectiveEntity {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_id", nullable = false)
-    private UnitEntity unit;
+    @JoinColumn(name = "element_id", nullable = false)
+    private ElementEntity element;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
@@ -31,8 +31,8 @@ public class ObjectiveEntity {
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
-    public UnitEntity getUnit() { return unit; }
-    public void setUnit(UnitEntity unit) { this.unit = unit; }
+    public ElementEntity getElement() { return element; }
+    public void setElement(ElementEntity element) { this.element = element; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
