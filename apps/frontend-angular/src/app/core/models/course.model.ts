@@ -1,43 +1,56 @@
 export enum CourseLevel {
   BEGINNER = 'BEGINNER',
   INTERMEDIATE = 'INTERMEDIATE',
-  ADVANCED = 'ADVANCED'
+  ADVANCED = 'ADVANCED',
 }
 
 export enum ResourceType {
   TEXT = 'TEXT',
   VIDEO = 'VIDEO',
   QUIZ = 'QUIZ',
-  ASSIGNMENT = 'ASSIGNMENT'
+  ASSIGNMENT = 'ASSIGNMENT',
 }
 
 export enum GenerationStatus {
   PENDING = 'PENDING',
   GENERATING = 'GENERATING',
   COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
 }
 
 export interface ObjectiveResponse {
   id: string;
   description: string;
+  createdAt: string;
+}
+
+export interface ElementResponse {
+  id: string;
+  resourceType: ResourceType;
+  title: string;
+  body: string | null;
+  status: GenerationStatus;
+  version: number;
+  createdAt: string;
+  objectives: ObjectiveResponse[];
 }
 
 export interface UnitResponse {
   id: string;
   title: string;
-  contentPlaceholder: string;
-  resourceType: ResourceType;
   orderIndex: number;
-  status: GenerationStatus;
-  objectives: ObjectiveResponse[];
+  createdAt: string;
+  active: boolean;
+  element: ElementResponse;
 }
 
 export interface ModuleResponse {
   id: string;
   title: string;
-  summary: string;
+  summary: string | null;
   orderIndex: number;
+  createdAt: string;
+  active: boolean;
   units: UnitResponse[];
 }
 
@@ -67,16 +80,23 @@ export interface CreateObjectiveRequest {
   description: string;
 }
 
+export interface CreateElementRequest {
+  resourceType: ResourceType;
+  title: string;
+  body: string;
+  objectives: CreateObjectiveRequest[];
+}
+
 export interface CreateUnitRequest {
   title: string;
-  contentPlaceholder: string;
-  resourceType: ResourceType;
-  objectives: CreateObjectiveRequest[];
+  orderIndex: number;
+  element: CreateElementRequest;
 }
 
 export interface CreateModuleRequest {
   title: string;
   summary: string;
+  orderIndex: number;
   units: CreateUnitRequest[];
 }
 
@@ -87,12 +107,4 @@ export interface CreateCourseBulkRequest {
   version: string;
   organizationId: string;
   modules: CreateModuleRequest[];
-}
-
-export interface CreateCourseRequest {
-  title: string;
-  description: string;
-  level: CourseLevel;
-  version: string;
-  organizationId: string;
 }

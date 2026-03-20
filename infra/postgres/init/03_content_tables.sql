@@ -37,22 +37,36 @@ CREATE TABLE IF NOT EXISTS content.modules (
     CONSTRAINT uk_module_course_order UNIQUE (course_id, order_index)
 );
 
+-- Slot de posicion en el temario (sin contenido propio)
 CREATE TABLE IF NOT EXISTS content.units (
     id UUID PRIMARY KEY,
     module_id UUID NOT NULL REFERENCES content.modules(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
-    content_placeholder TEXT,
-    resource_type content.resource_type NOT NULL,
     order_index INT NOT NULL,
-    status content.generation_status NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uk_unit_module_order UNIQUE (module_id, order_index)
 );
 
-CREATE TABLE IF NOT EXISTS content.objectives (
+-- Contenido real de la unidad (reutilizable y versionable)
+CREATE TABLE IF NOT EXISTS content.elements (
     id UUID PRIMARY KEY,
     unit_id UUID NOT NULL REFERENCES content.units(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL,
+    resource_type content.resource_type NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT,
+    status content.generation_status NOT NULL DEFAULT 'PENDING',
+    version INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_elements_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id)
+);
+
+-- Objetivos atomicos: prompts quirurgicos para la fase de redaccion del LLM
+CREATE TABLE IF NOT EXISTS content.objectives (
+    id UUID PRIMARY KEY,
+    element_id UUID NOT NULL REFERENCES content.elements(id) ON DELETE CASCADE,
     description TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

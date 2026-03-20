@@ -2,8 +2,10 @@ package com.gestorelearning.llmorchestrator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestorelearning.common.domain.CourseLevel;
+import com.gestorelearning.common.domain.ResourceType;
 import com.gestorelearning.common.dto.CourseTreeResponse;
 import com.gestorelearning.common.dto.CreateCourseBulkRequest;
+import com.gestorelearning.common.dto.CreateElementRequest;
 import com.gestorelearning.common.dto.CreateModuleRequest;
 import com.gestorelearning.common.dto.CreateUnitRequest;
 import com.gestorelearning.llmorchestrator.service.ValidationService;
@@ -30,7 +32,7 @@ public class CourseOrchestrationIntegrationTest {
 
     @Test
     void testFullTreeValidationFailure() throws Exception {
-        // 1. JSON de curso con un módulo que contiene una unidad INVALIDA (sin resourceType)
+        // JSON de curso con una unidad que no tiene element (campo obligatorio @NotNull)
         String invalidTreeJson = """
         {
             "title": "Master IA",
@@ -53,30 +55,32 @@ public class CourseOrchestrationIntegrationTest {
         """;
 
         CreateCourseBulkRequest invalidTree = objectMapper.readValue(invalidTreeJson, CreateCourseBulkRequest.class);
-        
-        // 2. Al validar el objeto RAÍZ, el validador debe entrar en cascada hasta la unidad y fallar
+
+        // El validador debe entrar en cascada hasta la unidad y fallar por element == null
         assertThrows(ConstraintViolationException.class, () -> {
             validationService.validate(invalidTree);
         });
     }
 
     @Test
-    void testInvalidUnitValidation() throws Exception {
-        // 1. JSON de unidad sin ResourceType (que es @NotNull en CreateUnitRequest)
+    void testInvalidElementValidation() throws Exception {
+        // Unidad con element pero sin resourceType (@NotNull en CreateElementRequest)
         String invalidUnitJson = """
         {
             "title": "Unidad sin recurso",
-            "contentPlaceholder": "Texto...",
-            "orderIndex": 1
+            "orderIndex": 1,
+            "element": {
+                "title": "Elemento sin tipo",
+                "body": "Texto..."
+            }
         }
         """;
 
-        // 2. Jackson lo parsea (porque Jackson por sí solo no valida anotaciones de Bean Validation)
         CreateUnitRequest invalidUnit = objectMapper.readValue(invalidUnitJson, CreateUnitRequest.class);
         assertNotNull(invalidUnit);
-        assertNull(invalidUnit.resourceType());
+        assertNull(invalidUnit.element().resourceType());
 
-        // 3. Nuestro ValidationService DEBE lanzar la excepción
+        // ValidationService DEBE lanzar la excepcion
         assertThrows(ConstraintViolationException.class, () -> {
             validationService.validate(invalidUnit);
         });
@@ -84,7 +88,7 @@ public class CourseOrchestrationIntegrationTest {
 
     @Test
     void testExportImportMapping() throws Exception {
-        // 1. Simular un JSON de exportación proveniente del content-service (CourseTreeResponse)
+        // Simular un JSON de exportacion proveniente del content-service (CourseTreeResponse)
         String exportJson = """
         {
             "courseId": "123e4567-e89b-12d3-a456-426614174000",
@@ -106,19 +110,18 @@ public class CourseOrchestrationIntegrationTest {
         }
         """;
 
-        // 2. Validar que Jackson lo mapea correctamente al DTO de árbol
         CourseTreeResponse treeResponse = objectMapper.readValue(exportJson, CourseTreeResponse.class);
         assertNotNull(treeResponse);
         assertEquals("Master en IA", treeResponse.title());
         assertEquals(CourseLevel.ADVANCED, treeResponse.level());
         assertEquals(1, treeResponse.modules().size());
 
-        // 3. Simular la transformación para Importación Masiva (Bulk Import)
+        // Simular la transformacion para Importacion Masiva (Bulk Import)
         CreateCourseBulkRequest importRequest = new CreateCourseBulkRequest(
                 treeResponse.title(),
-                "Descripción generada o clonada",
+                "Descripcion generada o clonada",
                 treeResponse.level(),
-                "1.1.0", // Nueva versión
+                "1.1.0",
                 treeResponse.organizationId(),
                 List.of(new CreateModuleRequest(
                         treeResponse.modules().get(0).title(),
@@ -128,12 +131,29 @@ public class CourseOrchestrationIntegrationTest {
                 ))
         );
 
-        // 4. Validar el payload que el orchestrator enviaría a POST /api/v1/courses/bulk
         String importJsonPayload = objectMapper.writeValueAsString(importRequest);
         assertNotNull(importJsonPayload);
-        
+
         CreateCourseBulkRequest parsedImport = objectMapper.readValue(importJsonPayload, CreateCourseBulkRequest.class);
         assertEquals("1.1.0", parsedImport.version());
         assertEquals("Módulo 1: Fundamentos", parsedImport.modules().get(0).title());
+    }
+
+    @Test
+    void testValidUnitWithElement() throws Exception {
+        // Unidad valida con element completo
+        CreateUnitRequest validUnit = new CreateUnitRequest(
+                "Introduccion a los Grafos",
+                0,
+                new CreateElementRequest(
+                        ResourceType.TEXT,
+                        "Introduccion a los Grafos",
+                        "Un grafo es una estructura de datos...",
+                        List.of()
+                )
+        );
+
+        // No debe lanzar excepcion
+        assertDoesNotThrow(() -> validationService.validate(validUnit));
     }
 }

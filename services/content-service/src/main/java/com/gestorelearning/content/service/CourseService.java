@@ -1,12 +1,13 @@
 package com.gestorelearning.content.service;
 
-import com.gestorelearning.common.domain.*;
 import com.gestorelearning.common.dto.*;
 import com.gestorelearning.content.domain.CourseEntity;
+import com.gestorelearning.content.domain.ElementEntity;
 import com.gestorelearning.content.domain.ModuleEntity;
 import com.gestorelearning.content.domain.ObjectiveEntity;
 import com.gestorelearning.content.domain.UnitEntity;
 import com.gestorelearning.content.repository.CourseRepository;
+import com.gestorelearning.content.repository.ElementRepository;
 import com.gestorelearning.content.repository.ModuleRepository;
 import com.gestorelearning.content.repository.ObjectiveRepository;
 import com.gestorelearning.content.repository.UnitRepository;
@@ -24,17 +25,20 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final ModuleRepository moduleRepository;
-    private final ObjectiveRepository objectiveRepository;
     private final UnitRepository unitRepository;
+    private final ElementRepository elementRepository;
+    private final ObjectiveRepository objectiveRepository;
 
     public CourseService(CourseRepository courseRepository,
                          ModuleRepository moduleRepository,
-                         ObjectiveRepository objectiveRepository,
-                         UnitRepository unitRepository) {
+                         UnitRepository unitRepository,
+                         ElementRepository elementRepository,
+                         ObjectiveRepository objectiveRepository) {
         this.courseRepository = courseRepository;
         this.moduleRepository = moduleRepository;
-        this.objectiveRepository = objectiveRepository;
         this.unitRepository = unitRepository;
+        this.elementRepository = elementRepository;
+        this.objectiveRepository = objectiveRepository;
     }
 
     @Transactional
@@ -57,18 +61,16 @@ public class CourseService {
     public CourseResponse updateCourseWithTree(UUID id, CreateCourseBulkRequest request) {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-        
+
         course.setTitle(request.title());
         course.setDescription(request.description());
         course.setLevel(request.level());
         course.setVersion(request.version());
-        
+
         CourseEntity savedCourse = courseRepository.save(course);
 
-        // Borrar módulos antiguos y forzar sincronización con la BD para liberar los order_index
-        List<ModuleEntity> oldModules = moduleRepository.findByCourseIdOrderByOrderIndexAsc(id);
-        moduleRepository.deleteAll(oldModules);
-        moduleRepository.flush(); // IMPORTANTE: Evita el error de unique constraint uk_module_course_order
+        // Delete nativa: delega el CASCADE (units → elements → objectives) al motor de BD
+        moduleRepository.deleteByCourseIdNative(id);
 
         saveModules(savedCourse, request.modules());
 
@@ -76,35 +78,44 @@ public class CourseService {
     }
 
     private void saveModules(CourseEntity course, List<CreateModuleRequest> moduleRequests) {
-        if (moduleRequests != null) {
-            for (CreateModuleRequest modReq : moduleRequests) {
-                ModuleEntity module = new ModuleEntity();
-                module.setCourse(course);
-                module.setTitle(modReq.title());
-                module.setSummary(modReq.summary());
-                module.setOrderIndex(modReq.orderIndex());
-                ModuleEntity savedMod = moduleRepository.save(module);
+        if (moduleRequests == null) return;
+        for (CreateModuleRequest modReq : moduleRequests) {
+            ModuleEntity module = new ModuleEntity();
+            module.setCourse(course);
+            module.setTitle(modReq.title());
+            module.setSummary(modReq.summary());
+            module.setOrderIndex(modReq.orderIndex());
+            ModuleEntity savedMod = moduleRepository.save(module);
 
-                if (modReq.units() != null) {
-                    for (CreateUnitRequest unitReq : modReq.units()) {
-                        UnitEntity unit = new UnitEntity();
-                        unit.setModule(savedMod);
-                        unit.setTitle(unitReq.title());
-                        unit.setContentPlaceholder(unitReq.contentPlaceholder());
-                        unit.setResourceType(unitReq.resourceType());
-                        unit.setOrderIndex(unitReq.orderIndex());
-                        UnitEntity savedUnit = unitRepository.save(unit);
+            if (modReq.units() != null) {
+                for (CreateUnitRequest unitReq : modReq.units()) {
+                    UnitEntity unit = new UnitEntity();
+                    unit.setModule(savedMod);
+                    unit.setTitle(unitReq.title());
+                    unit.setOrderIndex(unitReq.orderIndex());
+                    UnitEntity savedUnit = unitRepository.save(unit);
 
-                        if (unitReq.objectives() != null) {
-                            for (CreateObjectiveRequest objReq : unitReq.objectives()) {
-                                ObjectiveEntity objective = new ObjectiveEntity();
-                                objective.setUnit(savedUnit);
-                                objective.setDescription(objReq.description());
-                                objectiveRepository.save(objective);
-                            }
-                        }
-                    }
+                    saveElement(savedUnit, course.getOrganizationId(), unitReq.element());
                 }
+            }
+        }
+    }
+
+    private void saveElement(UnitEntity unit, UUID organizationId, CreateElementRequest elementReq) {
+        ElementEntity element = new ElementEntity();
+        element.setUnit(unit);
+        element.setOrganizationId(organizationId);
+        element.setResourceType(elementReq.resourceType());
+        element.setTitle(elementReq.title());
+        element.setBody(elementReq.body());
+        ElementEntity savedElement = elementRepository.save(element);
+
+        if (elementReq.objectives() != null) {
+            for (CreateObjectiveRequest objReq : elementReq.objectives()) {
+                ObjectiveEntity objective = new ObjectiveEntity();
+                objective.setElement(savedElement);
+                objective.setDescription(objReq.description());
+                objectiveRepository.save(objective);
             }
         }
     }
@@ -113,12 +124,12 @@ public class CourseService {
     public CourseResponse updateCourse(UUID id, CreateCourseRequest request) {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-        
+
         course.setTitle(request.title());
         course.setDescription(request.description());
         course.setLevel(request.level());
         course.setVersion(request.version());
-        
+
         CourseEntity saved = courseRepository.save(course);
         return mapToCourseResponse(saved);
     }
@@ -127,14 +138,14 @@ public class CourseService {
     public void deleteCourse(UUID id) {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-        course.setActive(false); // Borrado lógico
+        course.setActive(false); // Borrado logico
         courseRepository.save(course);
     }
 
     @Transactional(readOnly = true)
     public List<CourseResponse> getCoursesByOrganization(UUID organizationId) {
         return courseRepository.findByOrganizationId(organizationId).stream()
-                .filter(CourseEntity::isActive) // Solo cursos activos
+                .filter(CourseEntity::isActive)
                 .map(this::mapToCourseResponse)
                 .collect(Collectors.toList());
     }
@@ -188,21 +199,33 @@ public class CourseService {
     }
 
     private UnitResponse mapToUnitResponse(UnitEntity unit) {
-        List<ObjectiveEntity> objectives = objectiveRepository.findByUnitId(unit.getId());
+        ElementEntity element = elementRepository.findByUnitIdAndActiveTrue(unit.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Unit " + unit.getId() + " has no active element"));
+
+        List<ObjectiveEntity> objectives = objectiveRepository.findByElementId(element.getId());
         List<ObjectiveResponse> objectiveResponses = objectives.stream()
                 .map(o -> new ObjectiveResponse(o.getId(), o.getDescription(), o.getCreatedAt()))
                 .collect(Collectors.toList());
 
+        ElementResponse elementResponse = new ElementResponse(
+                element.getId(),
+                element.getResourceType(),
+                element.getTitle(),
+                element.getBody(),
+                element.getStatus(),
+                element.getVersion(),
+                element.getCreatedAt(),
+                objectiveResponses
+        );
+
         return new UnitResponse(
                 unit.getId(),
                 unit.getTitle(),
-                unit.getContentPlaceholder(),
-                unit.getResourceType(),
                 unit.getOrderIndex(),
-                unit.getStatus(),
                 unit.getCreatedAt(),
                 unit.isActive(),
-                objectiveResponses
+                elementResponse
         );
     }
 
