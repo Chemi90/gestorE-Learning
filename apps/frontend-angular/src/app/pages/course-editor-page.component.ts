@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormArray, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CourseService } from '../services/course.service';
@@ -18,6 +18,16 @@ import {
 } from '../core/models/course.model';
 import { CourseTreeComponent } from '../components/course-tree.component';
 
+// Custom validator for minimum array length
+export function minLengthArray(min: number) {
+  return (c: AbstractControl): ValidationErrors | null => {
+    if (c.value && c.value.length >= min) {
+      return null;
+    }
+    return { minLengthArray: { valid: false } };
+  };
+}
+
 @Component({
   selector: 'app-course-editor-page',
   standalone: true,
@@ -31,7 +41,6 @@ import { CourseTreeComponent } from '../components/course-tree.component';
         <div class="header-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">Back</button>
           
-          <!-- BOTÓN DE GUARDADO - Forzamos el click y quitamos el disabled para debug -->
           <button
             *ngIf="!isReadOnly"
             type="button"
@@ -73,11 +82,6 @@ import { CourseTreeComponent } from '../components/course-tree.component';
             <div class="col">
               <label for="version">Version</label>
               <input type="number" id="version" formControlName="version" [readonly]="isReadOnly" />
-            </div>
-
-            <div class="col" *ngIf="isNewCourse">
-              <label for="organizationId">Organization ID</label>
-              <input id="organizationId" formControlName="organizationId" />
             </div>
           </div>
         </div>
@@ -193,14 +197,19 @@ export class CourseEditorPageComponent implements OnInit {
   ngOnInit() {
     this.initForm();
 
-    this.route.paramMap.subscribe((params) => {
-      const id = params.get('id');
-      if (id === 'new') {
+    this.route.url.subscribe(segments => {
+      const isNewRoute = segments.some(s => s.path === 'new');
+      if (isNewRoute) {
         this.isNewCourse = true;
-      } else if (id) {
-        this.courseId = id;
-        this.isNewCourse = false;
-        this.loadCourseData(id);
+      } else {
+        this.route.paramMap.subscribe(params => {
+          const id = params.get('id');
+          if (id) {
+            this.courseId = id;
+            this.isNewCourse = false;
+            this.loadCourseData(id);
+          }
+        });
       }
     });
   }
@@ -212,7 +221,7 @@ export class CourseEditorPageComponent implements OnInit {
       level: [CourseLevel.BEGINNER, Validators.required],
       version: [1, Validators.required],
       organizationId: [this.authService.getOrganizationId() ?? '', Validators.required],
-      modules: this.fb.array([]),
+      modules: this.fb.array([], minLengthArray(1)),
     });
   }
 
@@ -251,20 +260,18 @@ export class CourseEditorPageComponent implements OnInit {
   }
 
   saveCourse() {
-    // LOG INMEDIATO
     console.log('!!! SAVE COURSE FUNCTION CALLED !!!');
     console.log('Form Validity:', this.form.valid);
-    console.log('Form Values:', this.form.value);
-
+    
     if (this.form.invalid) {
       console.warn('Cannot proceed: Form is invalid.');
       this.findInvalidControls(this.form);
+      alert('The form is invalid. Make sure you have added at least one Module, one Unit, and one Element.');
       return;
     }
 
     const payload = this.form.getRawValue() as CreateCourseBulkRequest;
 
-    // RECALCULAR INDICES
     if (payload.modules) {
       payload.modules.forEach((mod: any, mIndex: number) => {
         mod.orderIndex = mIndex;
@@ -286,14 +293,16 @@ export class CourseEditorPageComponent implements OnInit {
       });
     }
 
-    console.log('Payload to send:', payload);
+    console.log('Final Payload to send:', payload);
 
     if (this.isNewCourse) {
+      console.log('Calling createFullCourse...');
       this.courseService.createFullCourse(payload).subscribe({
         next: () => this.router.navigate(['/courses']),
         error: (err: unknown) => console.error('Error creating course', err),
       });
     } else if (this.courseId) {
+      console.log('Calling updateCourseWithTree for ID:', this.courseId);
       this.courseService.updateCourseWithTree(this.courseId, payload).subscribe({
         next: () => this.router.navigate(['/courses']),
         error: (err: unknown) => console.error('Error updating course', err),
@@ -301,7 +310,6 @@ export class CourseEditorPageComponent implements OnInit {
     }
   }
 
-  // Método auxiliar para debugear validaciones
   private findInvalidControls(form: FormGroup | FormArray) {
     const invalid = [];
     const controls = form.controls as any;
@@ -345,12 +353,12 @@ export class CourseEditorPageComponent implements OnInit {
   private createUnitGroup(unit?: UnitResponse, unitIndex = 0): FormGroup {
     const elementsArray = this.fb.array(
       (unit?.elements ?? []).map((el, i) => this.createElementGroup(el, i)),
+      minLengthArray(1)
     );
     const objectivesArray = this.fb.array(
-      (unit?.objectives ?? []).map((obj, i) => this.createObjectiveGroup(obj, i)),
+      (unit?.objectives ?? []).map((obj, i) => this.createObjectiveGroup(obj, i))
     );
 
-    // If new unit, add one empty element
     if (!unit && elementsArray.length === 0) {
       elementsArray.push(this.createElementGroup());
     }
@@ -368,7 +376,7 @@ export class CourseEditorPageComponent implements OnInit {
       title: [module?.title ?? '', Validators.required],
       summary: [module?.summary ?? ''],
       orderIndex: [module?.orderIndex ?? moduleIndex],
-      units: this.fb.array([]),
+      units: this.fb.array([], minLengthArray(1)),
     });
   }
 }
