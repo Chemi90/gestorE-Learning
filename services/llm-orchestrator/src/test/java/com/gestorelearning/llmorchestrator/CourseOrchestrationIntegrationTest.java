@@ -32,12 +32,13 @@ public class CourseOrchestrationIntegrationTest {
 
     @Test
     void testFullTreeValidationFailure() throws Exception {
-        // JSON de curso con una unidad que no tiene element (campo obligatorio @NotNull)
+        // JSON de curso con una unidad que no tiene elements (campo nulo o vacio depende de validacion)
+        // En CreateUnitRequest no pusimos @NotEmpty sino que el flujo espera datos.
         String invalidTreeJson = """
         {
             "title": "Master IA",
             "level": "ADVANCED",
-            "version": "1.0.0",
+            "version": 1,
             "organizationId": "550e8400-e29b-41d4-a716-446655440000",
             "modules": [
                 {
@@ -56,7 +57,7 @@ public class CourseOrchestrationIntegrationTest {
 
         CreateCourseBulkRequest invalidTree = objectMapper.readValue(invalidTreeJson, CreateCourseBulkRequest.class);
 
-        // El validador debe entrar en cascada hasta la unidad y fallar por element == null
+        // ValidationService debe validar la estructura
         assertThrows(ConstraintViolationException.class, () -> {
             validationService.validate(invalidTree);
         });
@@ -64,21 +65,25 @@ public class CourseOrchestrationIntegrationTest {
 
     @Test
     void testInvalidElementValidation() throws Exception {
-        // Unidad con element pero sin resourceType (@NotNull en CreateElementRequest)
+        // Unidad con elements pero uno sin resourceType (@NotNull en CreateElementRequest)
         String invalidUnitJson = """
         {
             "title": "Unidad sin recurso",
             "orderIndex": 1,
-            "element": {
-                "title": "Elemento sin tipo",
-                "body": "Texto..."
-            }
+            "elements": [
+                {
+                    "title": "Elemento sin tipo",
+                    "body": "Texto...",
+                    "orderIndex": 0
+                }
+            ],
+            "objectives": []
         }
         """;
 
         CreateUnitRequest invalidUnit = objectMapper.readValue(invalidUnitJson, CreateUnitRequest.class);
         assertNotNull(invalidUnit);
-        assertNull(invalidUnit.element().resourceType());
+        assertNull(invalidUnit.elements().get(0).resourceType());
 
         // ValidationService DEBE lanzar la excepcion
         assertThrows(ConstraintViolationException.class, () -> {
@@ -95,7 +100,7 @@ public class CourseOrchestrationIntegrationTest {
             "organizationId": "550e8400-e29b-41d4-a716-446655440000",
             "title": "Master en IA",
             "level": "ADVANCED",
-            "version": "1.0.0",
+            "version": 1,
             "createdAt": "2023-10-01T12:00:00Z",
             "active": true,
             "modules": [
@@ -115,13 +120,14 @@ public class CourseOrchestrationIntegrationTest {
         assertEquals("Master en IA", treeResponse.title());
         assertEquals(CourseLevel.ADVANCED, treeResponse.level());
         assertEquals(1, treeResponse.modules().size());
+        assertEquals(1, treeResponse.version());
 
         // Simular la transformacion para Importacion Masiva (Bulk Import)
         CreateCourseBulkRequest importRequest = new CreateCourseBulkRequest(
                 treeResponse.title(),
                 "Descripcion generada o clonada",
                 treeResponse.level(),
-                "1.1.0",
+                2,
                 treeResponse.organizationId(),
                 List.of(new CreateModuleRequest(
                         treeResponse.modules().get(0).title(),
@@ -135,22 +141,26 @@ public class CourseOrchestrationIntegrationTest {
         assertNotNull(importJsonPayload);
 
         CreateCourseBulkRequest parsedImport = objectMapper.readValue(importJsonPayload, CreateCourseBulkRequest.class);
-        assertEquals("1.1.0", parsedImport.version());
+        assertEquals(2, parsedImport.version());
         assertEquals("Módulo 1: Fundamentos", parsedImport.modules().get(0).title());
     }
 
     @Test
-    void testValidUnitWithElement() throws Exception {
-        // Unidad valida con element completo
+    void testValidUnitWithElementAndObjectives() throws Exception {
+        // Unidad valida con element y objectives directos
         CreateUnitRequest validUnit = new CreateUnitRequest(
                 "Introduccion a los Grafos",
                 0,
-                new CreateElementRequest(
+                List.of(new CreateElementRequest(
                         ResourceType.TEXT,
                         "Introduccion a los Grafos",
                         "Un grafo es una estructura de datos...",
-                        List.of()
-                )
+                        0
+                )),
+                List.of(new com.gestorelearning.common.dto.CreateObjectiveRequest(
+                        "Entender que es un nodo",
+                        0
+                ))
         );
 
         // No debe lanzar excepcion

@@ -13,31 +13,32 @@ Analyze the provided text fragment for a specific module and decompose it into a
 1. **GRANULARITY**: Each unit should represent a single, focused learning concept or task.
 2. **ZERO HALLUCINATION**: Only extract units that are explicitly supported by the module's text fragment.
 3. **LOGICAL FLOW**: Units must be ordered sequentially to ensure a smooth learning curve.
-4. **RESOURCE TYPES**: Assign a `resourceType` to each unit from the following list: [TEXT, QUIZ, ASSIGNMENT].
-5. **FORMAT**: Your response must be a valid JSON array of `CreateUnitRequest` objects.
+4. **FORMAT**: Your response must be a valid JSON array of `CreateUnitRequest` objects.
 
-# Output Schema
-The JSON must be an array of objects, each containing:
-- `title`: The name of the unit (e.g., "Unit 1.1: Quantum Entanglement").
-- `contentPlaceholder`: A short (1 sentence) description of what this unit will contain.
-- `resourceType`: One of [TEXT, QUIZ, ASSIGNMENT].
-- `orderIndex`: The sequential index within the module, starting from 0.
-- `objectives`: An empty array `[]` (These will be populated in Phase 3).
+# Output Schema (CreateUnitRequest)
+Each object in the array must have:
+- `title`: (String) The name of the unit (e.g., "Unit 1.1: Quantum Entanglement").
+- `orderIndex`: (Integer) The sequential index within the module, starting from 0.
+- `elements`: (Array of CreateElementRequest) Initial resource placeholders. Each element must have:
+    - `resourceType`: One of [TEXT, VIDEO, QUIZ, ASSIGNMENT].
+    - `title`: The title of the resource.
+    - `body`: A short placeholder summary.
+    - `orderIndex`: 0.
+- `objectives`: (Array of CreateObjectiveRequest) Initial objectives placeholder. Start with an empty array `[]`.
 
 # JSON Output Example
 [
   {{
     "title": "Unit 1.1: Understanding Qubits",
-    "contentPlaceholder": "A deep dive into the mathematical basis of quantum states.",
-    "resourceType": "TEXT",
     "orderIndex": 0,
-    "objectives": []
-  }},
-  {{
-    "title": "Unit 1.2: Superposition Principles",
-    "contentPlaceholder": "Visualizing superposition through Bloch sphere representations.",
-    "resourceType": "TEXT",
-    "orderIndex": 1,
+    "elements": [
+      {{
+        "resourceType": "TEXT",
+        "title": "Introduction to Qubits",
+        "body": "A deep dive into the mathematical basis of quantum states.",
+        "orderIndex": 0
+      }}
+    ],
     "objectives": []
   }}
 ]
