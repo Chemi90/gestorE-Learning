@@ -79,71 +79,78 @@ import { ResourceType } from '../core/models/course.model';
                   </div>
                 </div>
 
-                <div formGroupName="element" class="element-container">
+                <!-- Elements of the unit -->
+                <div formArrayName="elements" class="elements-wrapper">
                   <div class="tree-subheader">
-                    <h5>Element</h5>
+                    <h5>Elements</h5>
+                    <button
+                      *ngIf="!isReadOnly"
+                      type="button"
+                      class="btn-sm btn-outline"
+                      (click)="addElement(mIndex, uIndex)"
+                    >
+                      + Add Element
+                    </button>
                   </div>
 
-                  <div class="node-content" *ngIf="!isReadOnly">
-                    <input
-                      formControlName="title"
-                      placeholder="Element Title"
-                      class="input-title"
-                    />
-                    <textarea formControlName="body" placeholder="Element Body" rows="4"></textarea>
-                    <select formControlName="resourceType">
-                      <option *ngFor="let type of resourceTypes" [value]="type">{{ type }}</option>
-                    </select>
+                  <div
+                    *ngFor="let elControl of getElements(mIndex, uIndex).controls; let eIndex = index"
+                    [formGroupName]="eIndex"
+                    class="element-container"
+                  >
+                    <div class="node-content" *ngIf="!isReadOnly">
+                      <div class="element-header">
+                        <input formControlName="title" placeholder="Element Title" class="input-title" />
+                        <button type="button" class="btn-sm btn-danger" (click)="removeElement(mIndex, uIndex, eIndex)">x</button>
+                      </div>
+                      <textarea formControlName="body" placeholder="Element Body" rows="3"></textarea>
+                      <select formControlName="resourceType">
+                        <option *ngFor="let type of resourceTypes" [value]="type">{{ type }}</option>
+                      </select>
+                    </div>
+
+                    <div class="node-content-readonly" *ngIf="isReadOnly">
+                      <strong>{{ elControl.get('title')?.value }}</strong>
+                      <p>Type: {{ elControl.get('resourceType')?.value }}</p>
+                      <p *ngIf="elControl.get('body')?.value">{{ elControl.get('body')?.value }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Objectives of the unit -->
+                <div class="objectives-container" formArrayName="objectives">
+                  <div class="tree-subheader">
+                    <h5>Objectives</h5>
+                    <button
+                      *ngIf="!isReadOnly"
+                      type="button"
+                      class="btn-sm btn-outline"
+                      (click)="addObjective(mIndex, uIndex)"
+                    >
+                      + Add Objective
+                    </button>
                   </div>
 
-                  <div class="node-content-readonly" *ngIf="isReadOnly">
-                    <strong>{{ unitControl.get('element.title')?.value }}</strong>
-                    <p>Type: {{ unitControl.get('element.resourceType')?.value }}</p>
-                    <p *ngIf="unitControl.get('element.body')?.value">
-                      {{ unitControl.get('element.body')?.value }}
-                    </p>
-                  </div>
-
-                  <div class="objectives-container">
-                    <div class="tree-subheader">
-                      <h5>Objectives</h5>
+                  <div class="objectives-list">
+                    <div
+                      *ngFor="let objControl of getObjectives(mIndex, uIndex).controls; let oIndex = index"
+                      [formGroupName]="oIndex"
+                      class="objective-node"
+                    >
+                      <div class="node-content" *ngIf="!isReadOnly">
+                        <input formControlName="description" placeholder="Objective Description" />
+                      </div>
+                      <div class="node-content-readonly" *ngIf="isReadOnly">
+                        - {{ objControl.get('description')?.value }}
+                      </div>
                       <button
                         *ngIf="!isReadOnly"
                         type="button"
-                        class="btn-sm btn-outline"
-                        (click)="addObjective(mIndex, uIndex)"
+                        class="btn-sm btn-danger"
+                        (click)="removeObjective(mIndex, uIndex, oIndex)"
                       >
-                        + Add Objective
+                        x
                       </button>
-                    </div>
-
-                    <div formArrayName="objectives" class="objectives-list">
-                      <div
-                        *ngFor="
-                          let objControl of getObjectives(mIndex, uIndex).controls;
-                          let oIndex = index
-                        "
-                        [formGroupName]="oIndex"
-                        class="objective-node"
-                      >
-                        <div class="node-content" *ngIf="!isReadOnly">
-                          <input
-                            formControlName="description"
-                            placeholder="Objective Description"
-                          />
-                        </div>
-                        <div class="node-content-readonly" *ngIf="isReadOnly">
-                          - {{ objControl.get('description')?.value }}
-                        </div>
-                        <button
-                          *ngIf="!isReadOnly"
-                          type="button"
-                          class="btn-sm btn-danger"
-                          (click)="removeObjective(mIndex, uIndex, oIndex)"
-                        >
-                          x
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -179,20 +186,33 @@ import { ResourceType } from '../core/models/course.model';
         border: 1px solid #eee;
         border-left: 4px solid #007bff;
         border-radius: 4px;
-        margin-left: 2rem;
+        margin-left: 1.5rem;
         margin-bottom: 1rem;
         padding: 1rem;
         background: white;
       }
-      .element-container {
-        margin-left: 2rem;
+      .elements-wrapper {
+        margin-left: 1.5rem;
         margin-bottom: 1rem;
+        border-left: 2px dashed #ccc;
+        padding-left: 1rem;
+      }
+      .element-container {
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: #f9f9f9;
+        border-radius: 4px;
+      }
+      .element-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
       }
       .objective-node {
         display: flex;
         gap: 0.5rem;
         align-items: center;
-        margin-left: 2rem;
+        margin-left: 1.5rem;
         margin-bottom: 0.5rem;
       }
 
@@ -237,6 +257,7 @@ import { ResourceType } from '../core/models/course.model';
       }
       .input-title {
         font-weight: bold;
+        flex: 1;
       }
       .btn-primary {
         background: #007bff;
@@ -291,12 +312,12 @@ export class CourseTreeComponent {
     return this.modules.at(moduleIndex).get('units') as FormArray;
   }
 
-  getElement(moduleIndex: number, unitIndex: number): FormGroup {
-    return this.getUnits(moduleIndex).at(unitIndex).get('element') as FormGroup;
+  getElements(moduleIndex: number, unitIndex: number): FormArray {
+    return this.getUnits(moduleIndex).at(unitIndex).get('elements') as FormArray;
   }
 
   getObjectives(moduleIndex: number, unitIndex: number): FormArray {
-    return this.getElement(moduleIndex, unitIndex).get('objectives') as FormArray;
+    return this.getUnits(moduleIndex).at(unitIndex).get('objectives') as FormArray;
   }
 
   addModule() {
@@ -319,12 +340,8 @@ export class CourseTreeComponent {
     const unitGroup = this.fb.group({
       title: ['', Validators.required],
       orderIndex: [unitsArray.length],
-      element: this.fb.group({
-        title: ['', Validators.required],
-        body: [''],
-        resourceType: [ResourceType.TEXT, Validators.required],
-        objectives: this.fb.array([]),
-      }),
+      elements: this.fb.array([this.createElementGroup()]),
+      objectives: this.fb.array([]),
     });
     unitsArray.push(unitGroup);
   }
@@ -333,14 +350,33 @@ export class CourseTreeComponent {
     this.getUnits(moduleIndex).removeAt(unitIndex);
   }
 
+  addElement(moduleIndex: number, unitIndex: number) {
+    this.getElements(moduleIndex, unitIndex).push(this.createElementGroup(this.getElements(moduleIndex, unitIndex).length));
+  }
+
+  removeElement(moduleIndex: number, unitIndex: number, eIndex: number) {
+    this.getElements(moduleIndex, unitIndex).removeAt(eIndex);
+  }
+
   addObjective(moduleIndex: number, unitIndex: number) {
+    const objectivesArray = this.getObjectives(moduleIndex, unitIndex);
     const objectiveGroup = this.fb.group({
       description: ['', Validators.required],
+      orderIndex: [objectivesArray.length],
     });
-    this.getObjectives(moduleIndex, unitIndex).push(objectiveGroup);
+    objectivesArray.push(objectiveGroup);
   }
 
   removeObjective(moduleIndex: number, unitIndex: number, objIndex: number) {
     this.getObjectives(moduleIndex, unitIndex).removeAt(objIndex);
+  }
+
+  private createElementGroup(orderIndex: number = 0): FormGroup {
+    return this.fb.group({
+      title: ['', Validators.required],
+      body: [''],
+      resourceType: [ResourceType.TEXT, Validators.required],
+      orderIndex: [orderIndex],
+    });
   }
 }

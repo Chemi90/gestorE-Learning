@@ -21,6 +21,8 @@ export enum GenerationStatus {
 export interface ObjectiveResponse {
   id: string;
   description: string;
+  orderIndex: number;
+  active: boolean;
   createdAt: string;
 }
 
@@ -31,8 +33,9 @@ export interface ElementResponse {
   body: string | null;
   status: GenerationStatus;
   version: number;
+  orderIndex: number;
+  active: boolean;
   createdAt: string;
-  objectives: ObjectiveResponse[];
 }
 
 export interface UnitResponse {
@@ -41,7 +44,8 @@ export interface UnitResponse {
   orderIndex: number;
   createdAt: string;
   active: boolean;
-  element: ElementResponse;
+  elements: ElementResponse[];
+  objectives: ObjectiveResponse[];
 }
 
 export interface ModuleResponse {
@@ -59,7 +63,7 @@ export interface CourseTreeResponse {
   organizationId: string;
   title: string;
   level: CourseLevel;
-  version: string;
+  version: number;
   createdAt: string;
   active: boolean;
   modules: ModuleResponse[];
@@ -71,26 +75,36 @@ export interface CourseResponse {
   title: string;
   description: string;
   level: CourseLevel;
-  version: string;
+  version: number;
   createdAt: string;
   active: boolean;
 }
 
+export interface CreateCourseRequest {
+  title: string;
+  description: string;
+  level: CourseLevel;
+  version: number;
+  organizationId: string;
+}
+
 export interface CreateObjectiveRequest {
   description: string;
+  orderIndex: number;
 }
 
 export interface CreateElementRequest {
   resourceType: ResourceType;
   title: string;
   body: string;
-  objectives: CreateObjectiveRequest[];
+  orderIndex: number;
 }
 
 export interface CreateUnitRequest {
   title: string;
   orderIndex: number;
-  element: CreateElementRequest;
+  elements: CreateElementRequest[];
+  objectives: CreateObjectiveRequest[];
 }
 
 export interface CreateModuleRequest {
@@ -104,7 +118,7 @@ export interface CreateCourseBulkRequest {
   title: string;
   description: string;
   level: CourseLevel;
-  version: string;
+  version: number;
   organizationId: string;
   modules: CreateModuleRequest[];
 }

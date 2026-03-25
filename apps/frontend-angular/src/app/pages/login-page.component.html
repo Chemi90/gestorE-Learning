@@ -1,5 +1,23 @@
 <main class="page">
   <section class="card">
+    <!-- Selector de Backend para Desarrollo -->
+    <div class="backend-switcher">
+      <p class="eyebrow">Entorno Backend</p>
+      <div class="btn-group">
+        @for (preset of backendPresets; track preset.url) {
+          <button 
+            type="button" 
+            [class.active]="currentApiUrl() === preset.url"
+            (click)="setBackend(preset.url)">
+            {{ preset.label }}
+          </button>
+        }
+      </div>
+      <p class="current-url">Conectado a: <code>{{ currentApiUrl() }}</code></p>
+    </div>
+
+    <hr />
+
     <p class="eyebrow">Autenticacion</p>
     <h1>Iniciar sesion</h1>
 

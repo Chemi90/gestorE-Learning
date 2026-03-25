@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -9,12 +9,15 @@ import { AuthService } from '../services/auth.service';
   imports: [CommonModule, RouterModule],
   template: `
     <nav class="navbar">
-      <div class="nav-brand">Gestor E-Learning</div>
-      <div class="nav-links" *ngIf="isLoggedIn()">
+      <div class="nav-brand" routerLink="/">Gestor E-Learning</div>
+      
+      <!-- Usamos la signal directamente en el template para reactividad inmediata -->
+      <div class="nav-links" *ngIf="authService.token()">
         <a routerLink="/courses" routerLinkActive="active" class="nav-link">Courses</a>
         <button class="btn-logout" (click)="logout()">Logout</button>
       </div>
-      <div class="nav-links" *ngIf="!isLoggedIn()">
+      
+      <div class="nav-links" *ngIf="!authService.token()">
         <a routerLink="/login" routerLinkActive="active" class="nav-link">Login</a>
       </div>
     </nav>
@@ -28,10 +31,14 @@ import { AuthService } from '../services/auth.service';
       background-color: #333;
       color: white;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     .nav-brand {
       font-size: 1.5rem;
       font-weight: bold;
+      cursor: pointer;
     }
     .nav-links {
       display: flex;
@@ -68,12 +75,9 @@ import { AuthService } from '../services/auth.service';
   `]
 })
 export class NavbarComponent {
-  private readonly authService = inject(AuthService);
+  // Hacemos el servicio público para acceder a sus signals desde el template
+  public readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-
-  isLoggedIn(): boolean {
-    return !!this.authService.getToken();
-  }
 
   logout(): void {
     this.authService.logout();

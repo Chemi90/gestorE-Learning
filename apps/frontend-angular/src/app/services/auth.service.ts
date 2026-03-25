@@ -11,17 +11,27 @@ import { UserRole } from '../core/types/user-role.type';
 export class AuthService {
   private readonly http = inject(HttpClient);
 
-  private readonly token = signal<string | null>(localStorage.getItem('token'));
-  private readonly role = signal<UserRole | null>(localStorage.getItem('role') as UserRole);
-  private readonly organizationId = signal<string | null>(localStorage.getItem('organizationId'));
+  public readonly token = signal<string | null>(localStorage.getItem('token'));
+  public readonly role = signal<UserRole | null>(localStorage.getItem('role') as UserRole);
+  public readonly organizationId = signal<string | null>(localStorage.getItem('organizationId'));
+  
+  // URL Dinámica para desarrollo
+  public readonly apiBaseUrl = signal<string>(sessionStorage.getItem('apiBaseUrl') ?? environment.API_BASE_URL);
+
+  setApiBaseUrl(url: string): void {
+    this.apiBaseUrl.set(url);
+    sessionStorage.setItem('apiBaseUrl', url);
+    // Al cambiar de backend, la sesion anterior ya no es valida
+    this.logout();
+  }
 
   getOrganizations(): Observable<OrganizationResponse[]> {
-    return this.http.get<OrganizationResponse[]>(`${environment.API_BASE_URL}/auth/api/v1/auth/organizations`);
+    return this.http.get<OrganizationResponse[]>(`${this.apiBaseUrl()}/auth/api/v1/auth/organizations`);
   }
 
   login(email: string, password: string, organizationId: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${environment.API_BASE_URL}/auth/api/v1/auth/login`, { email, password, organizationId })
+      .post<LoginResponse>(`${this.apiBaseUrl()}/auth/api/v1/auth/login`, { email, password, organizationId })
       .pipe(
         tap((response) => {
           this.token.set(response.accessToken);
