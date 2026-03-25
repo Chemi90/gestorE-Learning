@@ -20,9 +20,6 @@ public class ElementEntity {
     @JoinColumn(name = "unit_id", nullable = false)
     private UnitEntity unit;
 
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "resource_type", columnDefinition = "content.resource_type")
     @JdbcType(PostgreSQLEnumJdbcType.class)
@@ -38,6 +35,9 @@ public class ElementEntity {
     @Column(nullable = false, columnDefinition = "content.generation_status")
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private GenerationStatus status = GenerationStatus.PENDING;
+
+    @Column(name = "order_index", nullable = false)
+    private Integer orderIndex;
 
     @Column(nullable = false)
     private int version = 1;
@@ -60,9 +60,6 @@ public class ElementEntity {
     public UnitEntity getUnit() { return unit; }
     public void setUnit(UnitEntity unit) { this.unit = unit; }
 
-    public UUID getOrganizationId() { return organizationId; }
-    public void setOrganizationId(UUID organizationId) { this.organizationId = organizationId; }
-
     public ResourceType getResourceType() { return resourceType; }
     public void setResourceType(ResourceType resourceType) { this.resourceType = resourceType; }
 
@@ -74,6 +71,9 @@ public class ElementEntity {
 
     public GenerationStatus getStatus() { return status; }
     public void setStatus(GenerationStatus status) { this.status = status; }
+
+    public Integer getOrderIndex() { return orderIndex; }
+    public void setOrderIndex(Integer orderIndex) { this.orderIndex = orderIndex; }
 
     public int getVersion() { return version; }
     public void setVersion(int version) { this.version = version; }

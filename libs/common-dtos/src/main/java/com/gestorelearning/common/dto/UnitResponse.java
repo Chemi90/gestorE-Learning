@@ -1,6 +1,9 @@
 package com.gestorelearning.common.dto;
 
+import com.gestorelearning.common.domain.CourseLevel;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record UnitResponse(
@@ -9,5 +12,6 @@ public record UnitResponse(
         Integer orderIndex,
         Instant createdAt,
         boolean active,
-        ElementResponse element
+        List<ElementResponse> elements,
+        List<ObjectiveResponse> objectives
 ) {}

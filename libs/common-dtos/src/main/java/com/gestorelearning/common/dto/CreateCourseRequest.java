@@ -9,6 +9,6 @@ public record CreateCourseRequest(
         @NotBlank String title,
         String description,
         @NotNull CourseLevel level,
-        @NotBlank String version,
+        int version,
         @NotNull UUID organizationId
 ) {}

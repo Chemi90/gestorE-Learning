@@ -10,7 +10,7 @@ public record CourseResponse(
         String title,
         String description,
         CourseLevel level,
-        String version,
+        int version,
         UUID organizationId,
         Instant createdAt,
         boolean active

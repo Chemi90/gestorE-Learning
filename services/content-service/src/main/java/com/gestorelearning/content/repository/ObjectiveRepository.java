@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ObjectiveRepository extends JpaRepository<ObjectiveEntity, UUID> {
-    List<ObjectiveEntity> findByElementId(UUID elementId);
+    List<ObjectiveEntity> findByUnitIdOrderByOrderIndexAsc(UUID unitId);
 }

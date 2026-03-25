@@ -11,7 +11,7 @@ public record CourseTreeResponse(
         UUID organizationId,
         String title,
         CourseLevel level,
-        String version,
+        int version,
         Instant createdAt,
         boolean active,
         List<ModuleResponse> modules

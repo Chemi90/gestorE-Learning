@@ -69,7 +69,7 @@ public class CourseService {
 
         CourseEntity savedCourse = courseRepository.save(course);
 
-        // Delete nativa: delega el CASCADE (units → elements → objectives) al motor de BD
+        // Delete nativa: delega el CASCADE (units → elements/objectives) al motor de BD
         moduleRepository.deleteByCourseIdNative(id);
 
         saveModules(savedCourse, request.modules());
@@ -95,28 +95,34 @@ public class CourseService {
                     unit.setOrderIndex(unitReq.orderIndex());
                     UnitEntity savedUnit = unitRepository.save(unit);
 
-                    saveElement(savedUnit, course.getOrganizationId(), unitReq.element());
+                    saveElements(savedUnit, unitReq.elements());
+                    saveObjectives(savedUnit, unitReq.objectives());
                 }
             }
         }
     }
 
-    private void saveElement(UnitEntity unit, UUID organizationId, CreateElementRequest elementReq) {
-        ElementEntity element = new ElementEntity();
-        element.setUnit(unit);
-        element.setOrganizationId(organizationId);
-        element.setResourceType(elementReq.resourceType());
-        element.setTitle(elementReq.title());
-        element.setBody(elementReq.body());
-        ElementEntity savedElement = elementRepository.save(element);
+    private void saveElements(UnitEntity unit, List<CreateElementRequest> elementRequests) {
+        if (elementRequests == null) return;
+        for (CreateElementRequest elementReq : elementRequests) {
+            ElementEntity element = new ElementEntity();
+            element.setUnit(unit);
+            element.setResourceType(elementReq.resourceType());
+            element.setTitle(elementReq.title());
+            element.setBody(elementReq.body());
+            element.setOrderIndex(elementReq.orderIndex());
+            elementRepository.save(element);
+        }
+    }
 
-        if (elementReq.objectives() != null) {
-            for (CreateObjectiveRequest objReq : elementReq.objectives()) {
-                ObjectiveEntity objective = new ObjectiveEntity();
-                objective.setElement(savedElement);
-                objective.setDescription(objReq.description());
-                objectiveRepository.save(objective);
-            }
+    private void saveObjectives(UnitEntity unit, List<CreateObjectiveRequest> objectiveRequests) {
+        if (objectiveRequests == null) return;
+        for (CreateObjectiveRequest objReq : objectiveRequests) {
+            ObjectiveEntity objective = new ObjectiveEntity();
+            objective.setUnit(unit);
+            objective.setDescription(objReq.description());
+            objective.setOrderIndex(objReq.orderIndex());
+            objectiveRepository.save(objective);
         }
     }
 
@@ -199,25 +205,32 @@ public class CourseService {
     }
 
     private UnitResponse mapToUnitResponse(UnitEntity unit) {
-        ElementEntity element = elementRepository.findByUnitIdAndActiveTrue(unit.getId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR, "Unit " + unit.getId() + " has no active element"));
+        List<ElementEntity> elements = elementRepository.findByUnitIdOrderByOrderIndexAsc(unit.getId());
+        List<ObjectiveEntity> objectives = objectiveRepository.findByUnitIdOrderByOrderIndexAsc(unit.getId());
 
-        List<ObjectiveEntity> objectives = objectiveRepository.findByElementId(element.getId());
-        List<ObjectiveResponse> objectiveResponses = objectives.stream()
-                .map(o -> new ObjectiveResponse(o.getId(), o.getDescription(), o.getCreatedAt()))
+        List<ElementResponse> elementResponses = elements.stream()
+                .map(e -> new ElementResponse(
+                        e.getId(),
+                        e.getResourceType(),
+                        e.getTitle(),
+                        e.getBody(),
+                        e.getStatus(),
+                        e.getVersion(),
+                        e.getOrderIndex(),
+                        e.isActive(),
+                        e.getCreatedAt()
+                ))
                 .collect(Collectors.toList());
 
-        ElementResponse elementResponse = new ElementResponse(
-                element.getId(),
-                element.getResourceType(),
-                element.getTitle(),
-                element.getBody(),
-                element.getStatus(),
-                element.getVersion(),
-                element.getCreatedAt(),
-                objectiveResponses
-        );
+        List<ObjectiveResponse> objectiveResponses = objectives.stream()
+                .map(o -> new ObjectiveResponse(
+                        o.getId(),
+                        o.getDescription(),
+                        o.getOrderIndex(),
+                        o.isActive(),
+                        o.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
 
         return new UnitResponse(
                 unit.getId(),
@@ -225,7 +238,8 @@ public class CourseService {
                 unit.getOrderIndex(),
                 unit.getCreatedAt(),
                 unit.isActive(),
-                elementResponse
+                elementResponses,
+                objectiveResponses
         );
     }
 

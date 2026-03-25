@@ -30,7 +30,7 @@ public class CourseEntity {
     private CourseLevel level;
 
     @Column(nullable = false)
-    private String version;
+    private int version;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -59,8 +59,8 @@ public class CourseEntity {
     public CourseLevel getLevel() { return level; }
     public void setLevel(CourseLevel level) { this.level = level; }
 
-    public String getVersion() { return version; }
-    public void setVersion(String version) { this.version = version; }
+    public int getVersion() { return version; }
+    public void setVersion(int version) { this.version = version; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
