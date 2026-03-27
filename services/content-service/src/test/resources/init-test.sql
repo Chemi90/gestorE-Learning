@@ -1,8 +1,9 @@
+-- init-test.sql
 -- Asegurar esquemas
 CREATE SCHEMA IF NOT EXISTS content;
 CREATE SCHEMA IF NOT EXISTS auth;
 
--- Crear tipos personalizados (lo que Hibernate NO sabe hacer solo)
+-- Crear tipos personalizados
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'course_level') THEN
         CREATE TYPE content.course_level AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
@@ -15,62 +16,75 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Tabla de organizaciones (mock para auth)
 CREATE TABLE IF NOT EXISTS auth.organizations (
     id UUID PRIMARY KEY
 );
 
+-- Tabla de cursos
 CREATE TABLE IF NOT EXISTS content.courses (
     id UUID PRIMARY KEY,
     organization_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     level content.course_level NOT NULL,
-    version VARCHAR(20) NOT NULL DEFAULT '1.0.0',
+    version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT fk_courses_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id)
 );
 
+-- Tabla de modulos
 CREATE TABLE IF NOT EXISTS content.modules (
     id UUID PRIMARY KEY,
-    course_id UUID NOT NULL REFERENCES content.courses(id) ON DELETE CASCADE,
+    course_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
     summary TEXT,
     order_index INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_modules_course FOREIGN KEY (course_id) REFERENCES content.courses(id) ON DELETE CASCADE,
     CONSTRAINT uk_module_course_order UNIQUE (course_id, order_index)
 );
 
+-- Tabla de unidades
 CREATE TABLE IF NOT EXISTS content.units (
     id UUID PRIMARY KEY,
-    module_id UUID NOT NULL REFERENCES content.modules(id) ON DELETE CASCADE,
+    module_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
     order_index INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_units_module FOREIGN KEY (module_id) REFERENCES content.modules(id) ON DELETE CASCADE,
     CONSTRAINT uk_unit_module_order UNIQUE (module_id, order_index)
 );
 
+-- Tabla de elementos
 CREATE TABLE IF NOT EXISTS content.elements (
     id UUID PRIMARY KEY,
-    unit_id UUID NOT NULL REFERENCES content.units(id) ON DELETE CASCADE,
-    organization_id UUID NOT NULL,
+    unit_id UUID NOT NULL,
     resource_type content.resource_type NOT NULL,
     title VARCHAR(255) NOT NULL,
     body TEXT,
+    order_index INT NOT NULL,
     status content.generation_status NOT NULL DEFAULT 'PENDING',
     version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT fk_elements_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id)
+    CONSTRAINT fk_elements_unit FOREIGN KEY (unit_id) REFERENCES content.units(id) ON DELETE CASCADE,
+    CONSTRAINT uk_element_unit_order UNIQUE (unit_id, order_index)
 );
 
+-- Tabla de objetivos
 CREATE TABLE IF NOT EXISTS content.objectives (
     id UUID PRIMARY KEY,
-    element_id UUID NOT NULL REFERENCES content.elements(id) ON DELETE CASCADE,
+    unit_id UUID NOT NULL,
     description TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    order_index INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_objectives_unit FOREIGN KEY (unit_id) REFERENCES content.units(id) ON DELETE CASCADE,
+    CONSTRAINT uk_objective_unit_order UNIQUE (unit_id, order_index)
 );
 
 -- Organizacion de prueba para satisfacer las FK

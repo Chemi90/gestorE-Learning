@@ -77,7 +77,7 @@ class CourseBulkIntegrationTest {
             "title": "Curso de Integracion",
             "description": "Descripcion de prueba",
             "level": "INTERMEDIATE",
-            "version": "1.0.0",
+            "version": 1,
             "organizationId": "%s",
             "modules": [
                 {
@@ -88,25 +88,31 @@ class CourseBulkIntegrationTest {
                         {
                             "title": "Unidad 1",
                             "orderIndex": 0,
-                            "element": {
-                                "resourceType": "TEXT",
-                                "title": "Introduccion al tema",
-                                "body": "Contenido de la unidad...",
-                                "objectives": [
-                                    { "description": "Objetivo 1: comprender los conceptos basicos" },
-                                    { "description": "Objetivo 2: aplicar los conceptos en ejercicios" }
-                                ]
-                            }
+                            "elements": [
+                                {
+                                    "resourceType": "TEXT",
+                                    "title": "Introduccion al tema",
+                                    "body": "Contenido de la unidad...",
+                                    "orderIndex": 0
+                                }
+                            ],
+                            "objectives": [
+                                { "description": "Objetivo 1", "orderIndex": 0 },
+                                { "description": "Objetivo 2", "orderIndex": 1 }
+                            ]
                         },
                         {
                             "title": "Unidad 2",
                             "orderIndex": 1,
-                            "element": {
-                                "resourceType": "QUIZ",
-                                "title": "Quiz de autoevaluacion",
-                                "body": null,
-                                "objectives": []
-                            }
+                            "elements": [
+                                {
+                                    "resourceType": "QUIZ",
+                                    "title": "Quiz de autoevaluacion",
+                                    "body": null,
+                                    "orderIndex": 0
+                                }
+                            ],
+                            "objectives": []
                         }
                     ]
                 }
@@ -126,26 +132,17 @@ class CourseBulkIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Curso de Integracion"))
                 .andExpect(jsonPath("$.modules[0].title").value("Modulo 1"))
-                // unit tiene titulo y no tiene campos de contenido en la raiz
                 .andExpect(jsonPath("$.modules[0].units[0].title").value("Unidad 1"))
-                .andExpect(jsonPath("$.modules[0].units[0].element").exists())
-                // element tiene los campos de contenido
-                .andExpect(jsonPath("$.modules[0].units[0].element.resourceType").value("TEXT"))
-                .andExpect(jsonPath("$.modules[0].units[0].element.title").value("Introduccion al tema"))
-                .andExpect(jsonPath("$.modules[0].units[0].element.status").value("PENDING"))
-                .andExpect(jsonPath("$.modules[0].units[0].element.version").value(1))
-                // objectives estan dentro del element
-                .andExpect(jsonPath("$.modules[0].units[0].element.objectives.length()").value(2))
-                .andExpect(jsonPath("$.modules[0].units[0].element.objectives[0].description")
-                        .value("Objetivo 1: comprender los conceptos basicos"))
-                // segunda unidad sin objectives
-                .andExpect(jsonPath("$.modules[0].units[1].element.resourceType").value("QUIZ"))
-                .andExpect(jsonPath("$.modules[0].units[1].element.objectives.length()").value(0));
+                .andExpect(jsonPath("$.modules[0].units[0].elements[0].resourceType").value("TEXT"))
+                .andExpect(jsonPath("$.modules[0].units[0].elements[0].title").value("Introduccion al tema"))
+                .andExpect(jsonPath("$.modules[0].units[0].objectives.length()").value(2))
+                .andExpect(jsonPath("$.modules[0].units[0].objectives[0].description").value("Objetivo 1"))
+                .andExpect(jsonPath("$.modules[0].units[1].elements[0].resourceType").value("QUIZ"))
+                .andExpect(jsonPath("$.modules[0].units[1].objectives.length()").value(0));
     }
 
     @Test
     void getCourseTree_afterCreate_matchesBulkResponse() throws Exception {
-        // Crear el curso
         MvcResult result = mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,17 +153,15 @@ class CourseBulkIntegrationTest {
         CourseTreeResponse created = objectMapper.readValue(
                 result.getResponse().getContentAsString(), CourseTreeResponse.class);
 
-        // Leer el arbol por ID y verificar que coincide
         mockMvc.perform(get("/api/v1/courses/" + created.courseId() + "/tree")
                         .header("Authorization", "Bearer " + teacherToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.courseId").value(created.courseId().toString()))
-                .andExpect(jsonPath("$.modules[0].units[0].element.objectives.length()").value(2));
+                .andExpect(jsonPath("$.modules[0].units[0].objectives.length()").value(2));
     }
 
     @Test
     void updateCourseWithTree_replacesModulesAndElements() throws Exception {
-        // Crear curso original
         MvcResult result = mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -177,13 +172,12 @@ class CourseBulkIntegrationTest {
         CourseTreeResponse created = objectMapper.readValue(
                 result.getResponse().getContentAsString(), CourseTreeResponse.class);
 
-        // Actualizar con un nuevo arbol de un solo modulo/unidad
         String updatedPayload = """
         {
             "title": "Curso Actualizado",
             "description": "Nueva descripcion",
             "level": "ADVANCED",
-            "version": "2.0.0",
+            "version": 2,
             "organizationId": "%s",
             "modules": [
                 {
@@ -194,14 +188,17 @@ class CourseBulkIntegrationTest {
                         {
                             "title": "Unidad Nueva",
                             "orderIndex": 0,
-                            "element": {
-                                "resourceType": "VIDEO",
-                                "title": "Video introductorio",
-                                "body": "URL del video",
-                                "objectives": [
-                                    { "description": "Ver el video completo" }
-                                ]
-                            }
+                            "elements": [
+                                {
+                                    "resourceType": "VIDEO",
+                                    "title": "Video introductorio",
+                                    "body": "URL del video",
+                                    "orderIndex": 0
+                                }
+                            ],
+                            "objectives": [
+                                { "description": "Ver el video completo", "orderIndex": 0 }
+                            ]
                         }
                     ]
                 }
@@ -215,21 +212,19 @@ class CourseBulkIntegrationTest {
                         .content(updatedPayload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Curso Actualizado"))
-                .andExpect(jsonPath("$.version").value("2.0.0"));
+                .andExpect(jsonPath("$.version").value(2));
 
-        // Verificar que el arbol refleja los cambios
         mockMvc.perform(get("/api/v1/courses/" + created.courseId() + "/tree")
                         .header("Authorization", "Bearer " + teacherToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.modules.length()").value(1))
                 .andExpect(jsonPath("$.modules[0].title").value("Modulo Nuevo"))
-                .andExpect(jsonPath("$.modules[0].units[0].element.resourceType").value("VIDEO"))
-                .andExpect(jsonPath("$.modules[0].units[0].element.objectives.length()").value(1));
+                .andExpect(jsonPath("$.modules[0].units[0].elements[0].resourceType").value("VIDEO"))
+                .andExpect(jsonPath("$.modules[0].units[0].objectives.length()").value(1));
     }
 
     @Test
     void deleteCourse_logicalDelete_courseBecomesInactive() throws Exception {
-        // Crear curso
         MvcResult result = mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -240,12 +235,10 @@ class CourseBulkIntegrationTest {
         CourseTreeResponse created = objectMapper.readValue(
                 result.getResponse().getContentAsString(), CourseTreeResponse.class);
 
-        // Borrar (logico)
         mockMvc.perform(delete("/api/v1/courses/" + created.courseId())
                         .header("Authorization", "Bearer " + teacherToken()))
                 .andExpect(status().isOk());
 
-        // El curso sigue existiendo pero con active=false
         mockMvc.perform(get("/api/v1/courses/" + created.courseId())
                         .header("Authorization", "Bearer " + teacherToken()))
                 .andExpect(status().isOk())
@@ -255,8 +248,7 @@ class CourseBulkIntegrationTest {
     @Test
     void createCourse_withUnknownOrganization_throwsDataIntegrityException() {
         String unknownOrgId = UUID.randomUUID().toString();
-        // La FK fk_courses_organization rechaza el INSERT en courses cuando la org no existe.
-        // MockMvc con @SpringBootTest propaga la excepcion directamente sin convertirla a HTTP.
+        
         org.junit.jupiter.api.Assertions.assertThrows(
                 Exception.class,
                 () -> mockMvc.perform(post("/api/v1/courses/bulk")
