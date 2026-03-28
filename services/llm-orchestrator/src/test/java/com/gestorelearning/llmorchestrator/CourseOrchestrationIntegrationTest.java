@@ -154,6 +154,7 @@ public class CourseOrchestrationIntegrationTest {
                 List.of(new CreateElementRequest(
                         ResourceType.TEXT,
                         "Introduccion a los Grafos",
+                        "Explicacion detallada sobre nodos, aristas y representacion de grafos.",
                         "Un grafo es una estructura de datos...",
                         0
                 )),
