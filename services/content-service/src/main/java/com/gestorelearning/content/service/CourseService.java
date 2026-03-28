@@ -109,6 +109,7 @@ public class CourseService {
             element.setUnit(unit);
             element.setResourceType(elementReq.resourceType());
             element.setTitle(elementReq.title());
+            element.setSummary(elementReq.summary());
             element.setBody(elementReq.body());
             element.setOrderIndex(elementReq.orderIndex());
             elementRepository.save(element);
@@ -186,6 +187,95 @@ public class CourseService {
         );
     }
 
+    @Transactional
+    public UnitResponse addUnitToModule(UUID moduleId, CreateUnitRequest request) {
+        ModuleEntity module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Module not found"));
+
+        UnitEntity unit = new UnitEntity();
+        unit.setModule(module);
+        unit.setTitle(request.title());
+        unit.setOrderIndex(request.orderIndex());
+        UnitEntity savedUnit = unitRepository.save(unit);
+
+        if (request.elements() != null) {
+            saveElements(savedUnit, request.elements());
+        }
+        if (request.objectives() != null) {
+            saveObjectives(savedUnit, request.objectives());
+        }
+
+        return mapToUnitResponse(savedUnit);
+    }
+
+    @Transactional
+    public ElementResponse addElementToUnit(UUID unitId, CreateElementRequest request) {
+        UnitEntity unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+        ElementEntity element = new ElementEntity();
+        element.setUnit(unit);
+        element.setResourceType(request.resourceType());
+        element.setTitle(request.title());
+        element.setSummary(request.summary());
+        element.setBody(request.body());
+        element.setOrderIndex(request.orderIndex());
+        ElementEntity saved = elementRepository.save(element);
+
+        return mapToElementResponse(saved);
+    }
+
+    @Transactional
+    public ObjectiveResponse addObjectiveToUnit(UUID unitId, CreateObjectiveRequest request) {
+        UnitEntity unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+        ObjectiveEntity objective = new ObjectiveEntity();
+        objective.setUnit(unit);
+        objective.setDescription(request.description());
+        objective.setOrderIndex(request.orderIndex());
+        ObjectiveEntity saved = objectiveRepository.save(objective);
+
+        return mapToObjectiveResponse(saved);
+    }
+
+    @Transactional
+    public ElementResponse updateElementBody(UUID elementId, UpdateElementBodyRequest request) {
+        ElementEntity element = elementRepository.findById(elementId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Element not found"));
+
+        element.setBody(request.body());
+        element.setStatus(com.gestorelearning.common.domain.GenerationStatus.COMPLETED);
+        ElementEntity saved = elementRepository.save(element);
+
+        return mapToElementResponse(saved);
+    }
+
+    private ElementResponse mapToElementResponse(ElementEntity e) {
+        return new ElementResponse(
+                e.getId(),
+                e.getResourceType(),
+                e.getTitle(),
+                e.getSummary(),
+                e.getBody(),
+                e.getStatus(),
+                e.getVersion(),
+                e.getOrderIndex(),
+                e.isActive(),
+                e.getCreatedAt()
+        );
+    }
+
+    private ObjectiveResponse mapToObjectiveResponse(ObjectiveEntity o) {
+        return new ObjectiveResponse(
+                o.getId(),
+                o.getDescription(),
+                o.getOrderIndex(),
+                o.isActive(),
+                o.getCreatedAt()
+        );
+    }
+
     private ModuleResponse mapToModuleResponse(ModuleEntity module) {
         List<UnitEntity> units = unitRepository.findByModuleIdOrderByOrderIndexAsc(module.getId());
 
@@ -209,27 +299,11 @@ public class CourseService {
         List<ObjectiveEntity> objectives = objectiveRepository.findByUnitIdOrderByOrderIndexAsc(unit.getId());
 
         List<ElementResponse> elementResponses = elements.stream()
-                .map(e -> new ElementResponse(
-                        e.getId(),
-                        e.getResourceType(),
-                        e.getTitle(),
-                        e.getBody(),
-                        e.getStatus(),
-                        e.getVersion(),
-                        e.getOrderIndex(),
-                        e.isActive(),
-                        e.getCreatedAt()
-                ))
+                .map(this::mapToElementResponse)
                 .collect(Collectors.toList());
 
         List<ObjectiveResponse> objectiveResponses = objectives.stream()
-                .map(o -> new ObjectiveResponse(
-                        o.getId(),
-                        o.getDescription(),
-                        o.getOrderIndex(),
-                        o.isActive(),
-                        o.getCreatedAt()
-                ))
+                .map(this::mapToObjectiveResponse)
                 .collect(Collectors.toList());
 
         return new UnitResponse(

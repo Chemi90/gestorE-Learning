@@ -10,6 +10,7 @@ public record ElementResponse(
         UUID id,
         ResourceType resourceType,
         String title,
+        String summary,
         String body,
         GenerationStatus status,
         int version,

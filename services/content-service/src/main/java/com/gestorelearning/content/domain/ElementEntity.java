@@ -29,6 +29,9 @@ public class ElementEntity {
     private String title;
 
     @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(columnDefinition = "TEXT")
     private String body;
 
     @Enumerated(EnumType.STRING)
@@ -65,6 +68,9 @@ public class ElementEntity {
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+
+    public String getSummary() { return summary; }
+    public void setSummary(String summary) { this.summary = summary; }
 
     public String getBody() { return body; }
     public void setBody(String body) { this.body = body; }
