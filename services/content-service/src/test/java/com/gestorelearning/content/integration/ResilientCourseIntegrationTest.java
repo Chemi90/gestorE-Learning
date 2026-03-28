@@ -67,7 +67,7 @@ class ResilientCourseIntegrationTest {
 
     @Test
     void testAtomicIncrementalHydration() throws Exception {
-        // 1. Crear esqueleto (Curso + Modulo + Unidad vacia)
+        // 1. Crear esqueleto (Curso + Modulo + Unidad con al menos un elemento planificado)
         String skeletonPayload = """
         {
             "title": "Skeleton Course",
@@ -84,7 +84,14 @@ class ResilientCourseIntegrationTest {
                         {
                             "title": "Unit 1.1",
                             "orderIndex": 0,
-                            "elements": [],
+                            "elements": [
+                                {
+                                    "resourceType": "TEXT",
+                                    "title": "Initial Element",
+                                    "summary": "Instruction for later",
+                                    "orderIndex": 0
+                                }
+                            ],
                             "objectives": []
                         }
                     ]
@@ -116,31 +123,32 @@ class ResilientCourseIntegrationTest {
                         .content(objective1))
                 .andExpect(status().isOk());
 
-        // 3. Añadir Elemento (con body vacio/placeholder)
-        String element1 = """
+        // 3. Añadir Segundo Elemento (planificado individualmente)
+        String element2 = """
         {
             "resourceType": "TEXT",
-            "title": "Element 1",
+            "title": "Element 2",
+            "summary": "Second instruction",
             "body": "",
-            "orderIndex": 0
+            "orderIndex": 1
         }
         """;
-        MvcResult el1Result = mockMvc.perform(post("/api/v1/units/" + unitId + "/elements")
+        MvcResult el2Result = mockMvc.perform(post("/api/v1/units/" + unitId + "/elements")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(element1))
+                        .content(element2))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        ElementResponse e1 = objectMapper.readValue(el1Result.getResponse().getContentAsString(), ElementResponse.class);
+        ElementResponse e2 = objectMapper.readValue(el2Result.getResponse().getContentAsString(), ElementResponse.class);
 
-        // 4. Actualizar BODY del Elemento 1 (Simulando respuesta del LLM paso 2.2)
+        // 4. Actualizar BODY del Elemento 2 (Simulando respuesta del LLM paso 2.2)
         String bodyUpdate = """
         {
             "body": "Detailed content from LLM"
         }
         """;
-        mockMvc.perform(patch("/api/v1/elements/" + e1.id() + "/body")
+        mockMvc.perform(patch("/api/v1/elements/" + e2.id() + "/body")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyUpdate))
@@ -152,7 +160,7 @@ class ResilientCourseIntegrationTest {
         mockMvc.perform(get("/api/v1/courses/" + tree.courseId() + "/tree")
                         .header("Authorization", "Bearer " + teacherToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.modules[0].units[0].elements[0].body").value("Detailed content from LLM"))
-                .andExpect(jsonPath("$.modules[0].units[0].elements[0].status").value("COMPLETED"));
+                .andExpect(jsonPath("$.modules[0].units[0].elements[1].body").value("Detailed content from LLM"))
+                .andExpect(jsonPath("$.modules[0].units[0].elements[1].status").value("COMPLETED"));
     }
 }
