@@ -10,6 +10,28 @@ Patrones para Dockerfiles multi-stage, docker-compose, healthchecks e infraestru
 3. Healthchecks usan TCP check via bash (`/dev/tcp/localhost/<puerto>`).
 4. No exponer puertos de BD/Redis/MinIO al host en produccion.
 
+## Comandos de Infraestructura (Compose)
+
+### Stack completo
+```powershell
+cp infra/.env.example infra/.env ; docker compose --env-file infra/.env -f infra/docker-compose.yml up -d --build
+```
+
+### Solo infraestructura (Postgres, Redis, MinIO)
+```powershell
+docker compose -f infra/docker-compose.yml up -d postgres redis minio
+```
+
+### Rebuild de un servicio específico
+```powershell
+docker compose --env-file infra/.env -f infra/docker-compose.yml up -d --build <servicio>
+```
+
+### Limpiar todo
+```powershell
+docker compose -f infra/docker-compose.yml down -v
+```
+
 ## Dockerfile — Patron Canonico (Backend)
 
 ```dockerfile
@@ -122,7 +144,6 @@ minio:
 ```
 
 ## Comandos Utiles
-
 ```bash
 # Stack completo
 cp infra/.env.example infra/.env
@@ -152,8 +173,7 @@ docker compose -f infra/docker-compose.yml down -v
 
 ## Referencias en el Repo
 
-- `services/auth-service/Dockerfile`
-- `services/api-gateway/Dockerfile`
+- `services/*/Dockerfile`
 - `apps/frontend-angular/Dockerfile`
 - `apps/frontend-angular/nginx.conf`
 - `infra/docker-compose.yml`

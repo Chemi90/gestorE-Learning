@@ -1,7 +1,7 @@
 # Skill: Testing
 
 ## Proposito
-Patrones para tests unitarios e integracion en backend (JUnit 5 + MockMvc + H2) y frontend (Vitest).
+Patrones para tests unitarios e integracion en backend (JUnit 5 + MockMvc + H2) y frontend (Vitest), y comandos de Build & CI Local.
 
 ## Reglas Obligatorias
 
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PingControllerTest {
 
     @Test
-    void pingReturnsExpectedPayload() {
+    void ping_whenCalled_returnsExpectedPayload() {
         PingController controller = new PingController();
         Map<String, String> payload = controller.ping();
 
@@ -161,16 +161,32 @@ describe('MiComponente', () => {
 });
 ```
 
+## Comandos de Build y CI Local
+
+```bash
+# Build y empaquetado de todos los servicios (sin ejecutar tests)
+mvn -B -ntp -f services/pom.xml clean package -DskipTests
+
+# Build de un servicio individual (sin tests)
+mvn -B -ntp -f services/pom.xml -pl <servicio> -am clean package -DskipTests
+
+# Frontend completo (Install + Build)
+cd apps/frontend-angular && npm ci && npm run build
+```
+
 ## Comandos de Test
 
 ```bash
-# Todos los tests de un servicio
+# Todos los tests de todos los servicios
+mvn -B -ntp -f services/pom.xml test
+
+# Todos los tests de un servicio especifico
 mvn -B -ntp -f services/pom.xml -pl <servicio> -am test
 
 # Un test especifico
 mvn -B -ntp -f services/pom.xml -pl <servicio> -am test -Dtest=<NombreTest>
 
-# Frontend
+# Frontend (Unit Tests)
 cd apps/frontend-angular && npm test -- --watch=false
 ```
 
