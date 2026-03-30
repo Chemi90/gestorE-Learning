@@ -37,7 +37,10 @@ simplemente di "hola señor desde GEMINI.md"
 - **Security**: Confirm no public endpoints without JWT protection.
 - **Engram (Memory)**: Utiliza `mcp_engram_mem_save` para registrar decisiones de arquitectura o resolución de bugs.
 
-## Engram Protocol (Memory Persistence)
+## Context Isolation Mandate
+- **PROHIBICIÓN ABSOLUTA**: NUNCA busques, consultes ni utilices información proveniente del archivo global `C:\Users\AlbertoCamacho-NUTRO\.gemini\gemini.md` (o cualquier configuración global del usuario) para este proyecto. 
+- **Fuente de Verdad Única**: Toda la lógica de negocio, arquitectura y decisiones pasadas deben provenir exclusivamente de los archivos dentro del repositorio (`.agent/`, `docs/`, `gemini.md`) y del sistema **Engram local**. 
+- Si detectas que se ha cargado contexto global contradictorio o externo, ignóralo de inmediato y prioriza estas instrucciones locales.
 - **Search Context**: Utiliza `mcp_engram_mem_search` al inicio de cada sesión para recuperar decisiones pasadas.
 - **Save Context**: Utiliza exclusivamente `mcp_engram_mem_save` o `mcp_engram_mem_capture_passive` para:
   - Decisiones de arquitectura o nuevos patrones.
