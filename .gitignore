@@ -43,7 +43,6 @@ yarn-error.log*
 
 # Engram AI agent memory
 .engram/
-GEMINI.md
 start_dev.bat
 .agent/specs/archivados
 .gemini
