@@ -44,7 +44,7 @@ public class CourseController {
         return courseService.getCourseById(id);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/tree")
     public CourseResponse updateCourse(@PathVariable UUID id, @Valid @RequestBody CreateCourseBulkRequest request) {
         return courseService.updateCourseWithTree(id, request);
     }
