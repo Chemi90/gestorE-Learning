@@ -344,6 +344,7 @@ export class CourseEditorPageComponent implements OnInit {
   private createElementGroup(element?: ElementResponse, index = 0): FormGroup {
     return this.fb.group({
       title: [element?.title ?? '', Validators.required],
+      summary: [element?.summary ?? '', Validators.required],
       body: [element?.body ?? ''],
       resourceType: [element?.resourceType ?? ResourceType.TEXT, Validators.required],
       orderIndex: [element?.orderIndex ?? index],

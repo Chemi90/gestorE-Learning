@@ -103,6 +103,7 @@ import { ResourceType } from '../core/models/course.model';
                         <input formControlName="title" placeholder="Element Title" class="input-title" />
                         <button type="button" class="btn-sm btn-danger" (click)="removeElement(mIndex, uIndex, eIndex)">x</button>
                       </div>
+                      <input formControlName="summary" placeholder="Element Summary (Required)" class="input-summary" />
                       <textarea formControlName="body" placeholder="Element Body" rows="3"></textarea>
                       <select formControlName="resourceType">
                         <option *ngFor="let type of resourceTypes" [value]="type">{{ type }}</option>
@@ -111,6 +112,7 @@ import { ResourceType } from '../core/models/course.model';
 
                     <div class="node-content-readonly" *ngIf="isReadOnly">
                       <strong>{{ elControl.get('title')?.value }}</strong>
+                      <p><em>{{ elControl.get('summary')?.value }}</em></p>
                       <p>Type: {{ elControl.get('resourceType')?.value }}</p>
                       <p *ngIf="elControl.get('body')?.value">{{ elControl.get('body')?.value }}</p>
                     </div>
@@ -374,6 +376,7 @@ export class CourseTreeComponent {
   private createElementGroup(orderIndex: number = 0): FormGroup {
     return this.fb.group({
       title: ['', Validators.required],
+      summary: ['', Validators.required],
       body: [''],
       resourceType: [ResourceType.TEXT, Validators.required],
       orderIndex: [orderIndex],

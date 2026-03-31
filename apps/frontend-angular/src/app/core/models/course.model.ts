@@ -30,6 +30,7 @@ export interface ElementResponse {
   id: string;
   resourceType: ResourceType;
   title: string;
+  summary: string;
   body: string | null;
   status: GenerationStatus;
   version: number;
@@ -96,6 +97,7 @@ export interface CreateObjectiveRequest {
 export interface CreateElementRequest {
   resourceType: ResourceType;
   title: string;
+  summary: string;
   body: string;
   orderIndex: number;
 }
