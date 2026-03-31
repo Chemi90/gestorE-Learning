@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS content.elements (
     unit_id UUID NOT NULL,
     resource_type content.resource_type NOT NULL,
     title VARCHAR(255) NOT NULL,
-    summary TEXT,
+    summary TEXT NOT NULL,
     body TEXT,
     order_index INT NOT NULL,
     status content.generation_status NOT NULL DEFAULT 'PENDING',
