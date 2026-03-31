@@ -28,7 +28,7 @@ public class ElementEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String summary;
 
     @Column(columnDefinition = "TEXT")

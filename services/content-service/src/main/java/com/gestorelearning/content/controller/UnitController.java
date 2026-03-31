@@ -1,9 +1,6 @@
 package com.gestorelearning.content.controller;
 
-import com.gestorelearning.common.dto.CreateElementRequest;
-import com.gestorelearning.common.dto.CreateObjectiveRequest;
-import com.gestorelearning.common.dto.ElementResponse;
-import com.gestorelearning.common.dto.ObjectiveResponse;
+import com.gestorelearning.common.dto.*;
 import com.gestorelearning.content.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -28,5 +25,15 @@ public class UnitController {
     @PostMapping("/{id}/objectives")
     public ObjectiveResponse addObjective(@PathVariable UUID id, @Valid @RequestBody CreateObjectiveRequest request) {
         return courseService.addObjectiveToUnit(id, request);
+    }
+
+    @PutMapping("/{id}")
+    public UnitResponse updateUnit(@PathVariable UUID id, @Valid @RequestBody CreateUnitRequest request) {
+        return courseService.updateUnit(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteUnit(@PathVariable UUID id) {
+        courseService.deleteUnit(id);
     }
 }

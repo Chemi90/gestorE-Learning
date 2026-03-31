@@ -22,6 +22,11 @@ public class CourseController {
         return courseService.createFullCourse(request);
     }
 
+    @PostMapping("/{id}/modules")
+    public ModuleResponse addModule(@PathVariable UUID id, @Valid @RequestBody CreateModuleRequest request) {
+        return courseService.addModuleToCourse(id, request);
+    }
+
     @GetMapping
     @SuppressWarnings("unchecked")
     public java.util.List<CourseResponse> getCourses(org.springframework.security.core.Authentication authentication) {
