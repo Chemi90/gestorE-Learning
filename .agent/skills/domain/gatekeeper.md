@@ -1,52 +1,35 @@
-# Skill: Pre-Commit Gatekeeper (Orquestador Maestro)
+# Skill: Pre-Commit Gatekeeper (Orquestador de Integridad)
 
 ## Proposito
-Actuar como la autoridad máxima de integridad antes de una confirmación de código, orquestando secuencialmente las Puertas de Calidad, validaciones de base de datos, el pipeline de pruebas y el protocolo de Git.
+Actuar como la autoridad máxima de integridad antes de cualquier confirmación de código, asegurando que el entorno local sea un espejo perfecto de CI (GitHub Actions).
 
-## Reglas Obligatorias
+## Mandato de Bloqueo Absoluto
+**EL AGENTE TIENE PROHIBIDO EJECUTAR `git commit` O `git push` SI ESTA SKILL NO TERMINA EN ÉXITO.**
 
-1. **Jerarquía de Ejecución**: El Maestro DEBE seguir estrictamente este orden:
-   0. **Puertas de Calidad (Quality Gates)**
-   1. **Estructura** (db-coherence.md)
-   2. **Calidad** (testing.md)
-   3. **Versionado** (git-workflow.md)
-2. **Fallo Crítico**: Cualquier error en un subdominio detiene la ejecución del Maestro. No hay "bypass".
+## Procedimiento de Verificación (Workflow)
 
-## Procedimiento Maestro (Workflow de Integridad)
+### 1. Validación de la "Tríada Sagrada" (Modelo)
+- Delegar en `domain/db-coherence.md`.
+- Confirmar que `Entidad Java` <-> `init.sql` <-> `init-test.sql` están sincronizados.
+- Si hay cambios en `common-dtos`, verificar impacto en todos los servicios.
 
-### Fase 0: Puertas de Calidad (Quality Gates)
-Antes de proceder con validaciones técnicas, verifica obligatoriamente:
-- [ ] Indentación Java: 4 espacios. Indentación YAML/JSON/TS: 2 espacios.
-- [ ] Todos los DTOs usan `record` de Java con anotaciones `@Valid` / `@NotBlank` / `@NotNull` donde corresponda.
-- [ ] Ninguna entidad JPA tiene `ddl-auto: create` o `update` en producción (solo `none`).
-- [ ] El Dockerfile del servicio nuevo copia TODOS los `pom.xml` hermanos (ver `docker.md`).
-- [ ] Cada servicio nuevo tiene `PingController` y `PingControllerTest`.
-- [ ] Los endpoints protegidos por rol usan `hasRole()` o `hasAnyRole()` en `SecurityConfig`.
-- [ ] Los commits siguen Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `ci:`.
-- [ ] El script SQL de init está en `infra/postgres/init/` con prefijo numérico.
-- [ ] La ruta nueva en el gateway está en `application.yml` del api-gateway y registrada en `JwtValidationFilter` si es pública.
+### 2. Ejecución de Tests (Capa de Espejo CI)
+Ejecutar obligatoriamente los comandos de Maven que emulan el entorno de producción:
+- **Backend**: `mvn -B -ntp -f services/pom.xml -pl <modulo-afectado>,api-gateway -am test`
+- **Frontend**: `cd apps/frontend-angular && npm test -- --watch=false`
 
-### Fase 1: Validar Modelo (Delegar en db-coherence.md)
-- Verificar la Tríada Sagrada: Entidad Java <-> SQL Infra <-> SQL Test.
-- Asegurar unicidad de nombres, tipos y restricciones.
+### 3. Puertas de Calidad (Estándares)
+- Indentación: Java (4 espacios), Web/TS/YAML (2 espacios).
+- DTOs: Uso estricto de Java `record` con `@Valid`.
+- JPA: `ddl-auto: none` en ficheros de configuración principal.
+- Docker: Dockerfiles actualizados con los nuevos `pom.xml`.
 
-### Fase 2: Ejecutar CI Local (Delegar en testing.md)
-- Ejecutar suite completa de Backend (Maven).
-- Ejecutar suite completa de Frontend (Angular Build + Test).
+## Manejo de Fallos
+- Si un test falla: **ABORTAR OPERACIÓN**.
+- Corregir código/test.
+- Reiniciar el Gatekeeper desde el punto 1.
 
-### Fase 3: Confirmar Cambios (Delegar en git-workflow.md)
-- Si las fases anteriores son exitosas:
-- Preparar commit siguiendo Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `ci:`).
-- Usar sintaxis con punto y coma `;` para PowerShell (no usar `&&`).
-
-## Anti-patrones a Evitar
-
-- Saltarse la validación de base de datos pensando que "es un cambio pequeño".
-- Intentar el commit si los tests de Angular fallan pero los de Java pasan (integridad total).
-- No leer las instrucciones específicas de cada sub-skill.
-
-## Referencias de Delegación
-
-- Modelo: `.agent/skills/db-coherence.md`
-- Pruebas: `.agent/skills/testing.md`
-- Git: `.agent/skills/git-workflow.md`
+## Referencias
+- Integridad DB: `domain/db-coherence.md`
+- Tests: `domain/testing-suite.md`
+- Git: `core/git-workflow.md`
