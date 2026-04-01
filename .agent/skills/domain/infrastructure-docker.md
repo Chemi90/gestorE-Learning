@@ -5,7 +5,8 @@ Patrones para Dockerfiles multi-stage, docker-compose, healthchecks e infraestru
 
 ## Reglas Obligatorias
 
-1. Cada Dockerfile DEBE copiar TODOS los `pom.xml` hermanos (requisito del reactor Maven).
+1. **EXCLUSIVIDAD DE CONTENEDORES**: NUNCA lances microservicios Java utilizando `mvn spring-boot:run` o `java -jar` directamente en el host. Toda ejecución debe realizarse vía `docker compose`. La ejecución local provoca conflictos de puertos (Bind Error en 8080/8082) y pérdida de conectividad con la red interna de servicios.
+2. Cada Dockerfile DEBE copiar TODOS los `pom.xml` hermanos (requisito del reactor Maven).
 2. Build multi-stage: `maven` para compilar, `eclipse-temurin-jre` para ejecutar.
 3. Healthchecks usan TCP check via bash (`/dev/tcp/localhost/<puerto>`).
 4. No exponer puertos de BD/Redis/MinIO al host en produccion.

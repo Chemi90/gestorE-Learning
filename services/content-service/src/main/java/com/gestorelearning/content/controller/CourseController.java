@@ -22,6 +22,11 @@ public class CourseController {
         return courseService.createFullCourse(request);
     }
 
+    @PostMapping("/{id}/modules")
+    public ModuleResponse addModule(@PathVariable UUID id, @Valid @RequestBody CreateModuleRequest request) {
+        return courseService.addModuleToCourse(id, request);
+    }
+
     @GetMapping
     @SuppressWarnings("unchecked")
     public java.util.List<CourseResponse> getCourses(org.springframework.security.core.Authentication authentication) {
@@ -39,7 +44,7 @@ public class CourseController {
         return courseService.getCourseById(id);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/tree")
     public CourseResponse updateCourse(@PathVariable UUID id, @Valid @RequestBody CreateCourseBulkRequest request) {
         return courseService.updateCourseWithTree(id, request);
     }

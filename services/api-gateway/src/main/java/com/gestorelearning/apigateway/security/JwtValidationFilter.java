@@ -43,16 +43,23 @@ public class JwtValidationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        if (HttpMethod.OPTIONS.equals(request.getMethod()) || PUBLIC_PATHS.contains(path)) {
+        if (HttpMethod.OPTIONS.equals(request.getMethod()) || isPublicPath(path)) {
             return chain.filter(exchange);
         }
 
+        // Busqueda resiliente de la cabecera Authorization (case-insensitive)
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null) {
+            // Reintento manual por si el cliente la mando en minusculas de forma no estandar
+            authHeader = request.getHeaders().getFirst("authorization");
+        }
+
+        if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
             return unauthorized(exchange, "Missing or invalid Authorization header");
         }
 
-        String token = authHeader.substring(7);
+        // Extraer token (soporta multiples espacios por error del cliente)
+        String token = authHeader.substring(7).trim();
 
         try {
             Claims claims = jwtService.parseClaims(token);
@@ -63,6 +70,8 @@ public class JwtValidationFilter implements GlobalFilter, Ordered {
                 return unauthorized(exchange, "Missing security claims");
             }
 
+            // Propagar Claims en cabeceras X- para facilitar la vida a los microservicios
+            // pero MANTENIENDO la cabecera Authorization original para validacion Zero-Trust
             ServerHttpRequest mutatedRequest = request.mutate()
                     .header("X-User-Role", role)
                     .header("X-Organization-Id", organizationId)
@@ -72,6 +81,10 @@ public class JwtValidationFilter implements GlobalFilter, Ordered {
         } catch (JwtException ex) {
             return unauthorized(exchange, "Invalid JWT");
         }
+    }
+
+    private boolean isPublicPath(String path) {
+        return PUBLIC_PATHS.stream().anyMatch(p -> path.equals(p) || path.endsWith(p));
     }
 
     @Override

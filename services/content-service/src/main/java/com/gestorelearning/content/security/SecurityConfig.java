@@ -40,6 +40,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER")
+                        // Escritura de MODULOS y UNIDADES: También ADMIN y TEACHER
+                        .requestMatchers("/api/v1/modules/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/api/v1/units/**").hasAnyRole("ADMIN", "TEACHER")
                         // Ping: Cualquier usuario autenticado
                         .requestMatchers("/api/v1/ping").authenticated()
                         // Cerrar por defecto: cualquier otra ruta requiere estar logueado

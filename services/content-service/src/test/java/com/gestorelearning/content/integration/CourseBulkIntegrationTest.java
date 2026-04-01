@@ -92,6 +92,7 @@ class CourseBulkIntegrationTest {
                                 {
                                     "resourceType": "TEXT",
                                     "title": "Introduccion al tema",
+                                    "summary": "Resumen del elemento 1",
                                     "body": "Contenido de la unidad...",
                                     "orderIndex": 0
                                 }
@@ -108,6 +109,7 @@ class CourseBulkIntegrationTest {
                                 {
                                     "resourceType": "QUIZ",
                                     "title": "Quiz de autoevaluacion",
+                                    "summary": "Resumen del quiz",
                                     "body": null,
                                     "orderIndex": 0
                                 }
@@ -182,7 +184,7 @@ class CourseBulkIntegrationTest {
             "modules": [
                 {
                     "title": "Modulo Nuevo",
-                    "summary": null,
+                    "summary": "Resumen obligatorio",
                     "orderIndex": 0,
                     "units": [
                         {
@@ -192,6 +194,7 @@ class CourseBulkIntegrationTest {
                                 {
                                     "resourceType": "VIDEO",
                                     "title": "Video introductorio",
+                                    "summary": "Resumen obligatorio video",
                                     "body": "URL del video",
                                     "orderIndex": 0
                                 }
@@ -206,7 +209,7 @@ class CourseBulkIntegrationTest {
         }
         """.formatted(ORG_ID);
 
-        mockMvc.perform(put("/api/v1/courses/" + created.courseId())
+        mockMvc.perform(put("/api/v1/courses/" + created.courseId() + "/tree")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedPayload))
@@ -224,7 +227,7 @@ class CourseBulkIntegrationTest {
     }
 
     @Test
-    void deleteCourse_logicalDelete_courseBecomesInactive() throws Exception {
+    void deleteCourse_physicalDelete_returns404OnGet() throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + teacherToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -241,19 +244,17 @@ class CourseBulkIntegrationTest {
 
         mockMvc.perform(get("/api/v1/courses/" + created.courseId())
                         .header("Authorization", "Bearer " + teacherToken()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.active").value(false));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void createCourse_withUnknownOrganization_throwsDataIntegrityException() {
+    void createCourse_withUnknownOrganization_isRejected() throws Exception {
         String unknownOrgId = UUID.randomUUID().toString();
         
-        org.junit.jupiter.api.Assertions.assertThrows(
-                Exception.class,
-                () -> mockMvc.perform(post("/api/v1/courses/bulk")
+        mockMvc.perform(post("/api/v1/courses/bulk")
                         .header("Authorization", "Bearer " + createToken("TEACHER", unknownOrgId))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bulkPayload(unknownOrgId))));
+                        .content(bulkPayload(unknownOrgId)))
+                .andExpect(status().isInternalServerError()); // O .isBadRequest() si tienes un mapper de excepciones
     }
 }

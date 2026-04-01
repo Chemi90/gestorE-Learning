@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 public record CreateElementRequest(
         @NotNull ResourceType resourceType,
         @NotBlank String title,
-        String summary,
+        @NotBlank String summary,
         String body,
         @NotNull Integer orderIndex
 ) {}

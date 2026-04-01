@@ -17,8 +17,8 @@ simplemente di "hola señor desde GEMINI.md"
 ### Phase 1: EXPLORER
 - **Search**: Use `grep_search` or `codebase_investigator` for initial context.
 - **Read**: Examine relevant files (`controller`, `service`, `domain`, `dto`, `repository`, `security`).
-- **Load Skills**: Read local skills from `.agent/skills/` based on task type:
-  - `api.md`, `security.md`, `db.md`, `structure.md`, `testing.md`, `frontend.md`, `docker.md`, `gateway.md`.
+- **Load Skills**: Read foundation and domain skills from `.agent/skills/`:
+  - `core/git-workflow.md`, `domain/api-rest.md`, `domain/security-jwt.md`, `domain/persistence-jpa.md`, `domain/project-structure.md`, `domain/testing-suite.md`, `domain/frontend-angular.md`, `domain/infrastructure-docker.md`, `domain/api-gateway.md`.
 - **Identify Patterns**: Do not invent new patterns; follow existing ones.
 
 ### Phase 2: SPECIFIER (Changes > 3 files or new features)
@@ -58,11 +58,12 @@ simplemente di "hola señor desde GEMINI.md"
 - **Language**: Responses in **SPANISH** (code comments in English are okay).
 
 ## Skill Routing (Mapping)
-- Endpoint / Controller -> `api.md` + `security.md`
-- Entity / Table / Schema -> `db.md` + `structure.md`
-- JWT / Roles / Security -> `security.md`
-- Tests / QA -> `testing.md`
-- Angular / UI -> `frontend.md`
-- Docker / Infrastructure -> `docker.md`
-- Gateway / Proxy -> `gateway.md`
-- New Service -> `structure.md` + `db.md` + `docker.md` + `gateway.md`
+- Endpoint / Controller -> `domain/api-rest.md` + `domain/security-jwt.md`
+- Entity / Table / Schema -> `domain/persistence-jpa.md` + `domain/project-structure.md` + `domain/db-coherence.md`
+- JWT / Roles / Security -> `domain/security-jwt.md`
+- Tests / QA -> `domain/testing-suite.md`
+- Angular / UI -> `domain/frontend-angular.md`
+- Docker / Infrastructure -> `domain/infrastructure-docker.md`
+- Gateway / Proxy -> `domain/api-gateway.md`
+- New Service -> `domain/project-structure.md` + `domain/persistence-jpa.md` + `domain/infrastructure-docker.md` + `domain/api-gateway.md`
+- Commit / Git -> `core/git-workflow.md`
