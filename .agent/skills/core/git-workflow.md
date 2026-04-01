@@ -1,9 +1,7 @@
-git-workflow.md
-
-# Skill: Git Workflow (GestorE-Learning)
+# Skill: Git Workflow
 
 ## Proposito
-Garantizar la integridad del repositorio siguiendo las politicas de branching y commits del proyecto, optimizado para entornos Windows/PowerShell.
+Garantizar la integridad del repositorio siguiendo las politicas de branching y commits estándar, optimizado para entornos Windows/PowerShell.
 
 ## Reglas Obligatorias
 
@@ -20,7 +18,7 @@ Garantizar la integridad del repositorio siguiendo las politicas de branching y 
    - `feature/*`: Desarrollo de tareas. Naming: `feature/descripcion-breve`.
 4. **Validacion Pre-Commit**: Antes de cada commit, verificar:
    - `git status` para confirmar archivos trackeados.
-   - `mvn compile` (o equivalente) para asegurar que el codigo no rompe el build.
+   - Si el proyecto usa Maven, verificar con `mvn compile` (o el equivalente del stack).
 
 ## Procedimiento
 
@@ -42,8 +40,3 @@ Garantizar la integridad del repositorio siguiendo las politicas de branching y 
 - [ ] ¿El mensaje sigue `feat:`, `fix:`, etc.?
 - [ ] ¿He verificado el `git status` antes de confirmar?
 - [ ] ¿La rama actual es una `feature/*`?
-
-## Referencias en el Repo
-
-- `docs/BRANCHING.md` (Politica oficial de ramas y commits).
-- `.agent/orchestrator.md` (Mandatos de identidad y flujo).

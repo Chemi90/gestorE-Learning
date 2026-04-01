@@ -10,7 +10,7 @@ Eres un arquitecto y desarrollador senior especializado en:
 - Infraestructura Docker Compose + PostgreSQL 16 + pgvector + Redis + MinIO
 - Autenticacion JWT multi-tenant con JJWT 0.12.6
 
-Raiz del monorepo: `/home/lucad/elearning/gestorE-Learning/`
+Raiz del monorepo: `/gestorE-Learning/`
 
 ## Mapa de Servicios
 
@@ -61,34 +61,43 @@ Al terminar cada cambio:
 3. Confirma que no hay endpoints publicos sin proteccion JWT involuntaria.
 4. Guarda contexto relevante en Engram con `mcp__engram__mem_save`.
 
-## Catalogo de Skills
+## Catalogo de Skills (Jerarquía Core vs Domain)
 
+### Capa 0: Foundation (Core)
+| Skill              | Proposito                                                            |
+|--------------------|----------------------------------------------------------------------|
+| `core/git-workflow.md` | Politicas de branching, conventional commits y PowerShell friendly |
+| `core/skill-creator.md` | Meta-skill para crear nuevos skills reutilizables o locales       |
+
+### Capa 1: Context (Domain)
 | Skill              | Cuando cargarlo                                                      |
 |--------------------|----------------------------------------------------------------------|
-| `structure.md`     | Crear un servicio nuevo o agregar paquetes                           |
-| `db.md`            | Entidades JPA, repositorios, scripts SQL de init, H2 en tests        |
-| `api.md`           | Nuevo endpoint REST, DTOs, validaciones, manejo de errores           |
-| `security.md`      | Cambios en JWT, filtros, SecurityConfig, roles, propagacion headers  |
-| `testing.md`       | Escribir o modificar tests JUnit 5 / MockMvc / H2 / Vitest           |
-| `frontend.md`      | Componentes Angular, services, interceptores, rutas                  |
-| `docker.md`        | Dockerfiles, docker-compose, healthchecks, infra local               |
-| `gateway.md`      | Rutas del gateway, StripPrefix, JwtValidationFilter, CORS            |
-| `storage.md`       | MinIO, subida de archivos, S3, persistencia de objetos binarios      |
-| `llm-orchestrator.md` | Generacion de temarios, pipeline de prompts (Macro/Meso/Micro), validacion JSON |
-| `skill-creator.md` | Cuando ningun skill existente cubre la necesidad                     |
+| `domain/project-structure.md` | Paquetes base `com.gestorelearning`, naming, PingController |
+| `domain/persistence-jpa.md` | Entidades JPA, repositorios, schemas SQL de init, H2 tests     |
+| `domain/db-coherence.md` | La Tríada Sagrada: Sincronía Entidad Java <-> SQL Infra <-> SQL Test |
+| `domain/api-rest.md` | Endpoints /api/v1/, DTO Java records, validaciones, errores         |
+| `domain/security-jwt.md` | JWT, filtros, SecurityConfig, roles, propagacion headers        |
+| `domain/testing-suite.md` | JUnit 5 / MockMvc / H2 / Vitest (Configuración local)           |
+| `domain/frontend-angular.md` | Angular 21, standalone, services, signals, interceptores      |
+| `domain/infrastructure-docker.md` | Dockerfiles multi-stage, compose, healthchecks local    |
+| `domain/api-gateway.md` | Rutas gateway, StripPrefix, JwtValidationFilter, CORS            |
+| `domain/storage-minio.md` | MinIO, subida de archivos S3, persistencia de objetos           |
+| `domain/educational-logic.md` | Lógica de Cursos/Módulos/Unidades, prompts Macro/Meso/Micro |
+| `domain/gatekeeper.md` | Orquestador maestro de integridad pre-commit                     |
 
 ## Enrutamiento de Skills por Tipo de Tarea
 
 ```
-tarea contiene "nuevo endpoint" o "controller"  → api.md + security.md
-tarea contiene "entidad" o "tabla" o "schema"   → db.md + structure.md
-tarea contiene "JWT" o "rol" o "seguridad"      → security.md
-tarea contiene "test" o "prueba"                → testing.md
-tarea contiene "Angular" o "componente" o "UI"  → frontend.md
-tarea contiene "Docker" o "compose" o "imagen"  → docker.md
-tarea contiene "gateway" o "ruta" o "proxy"     → gateway.md
-tarea contiene "prompt" o "temario" o "AI index" → llm-orchestrator.md
-tarea contiene "nuevo servicio"                 → structure.md + db.md + docker.md + gateway.md
+tarea contiene "nuevo endpoint" o "controller"  → domain/api-rest.md + domain/security-jwt.md
+tarea contiene "entidad" o "tabla" o "schema"   → domain/persistence-jpa.md + domain/project-structure.md + domain/db-coherence.md
+tarea contiene "JWT" o "rol" o "seguridad"      → domain/security-jwt.md
+tarea contiene "test" o "prueba"                → domain/testing-suite.md
+tarea contiene "Angular" o "componente" o "UI"  → domain/frontend-angular.md
+tarea contiene "Docker" o "compose" o "imagen"  → domain/infrastructure-docker.md
+tarea contiene "gateway" o "ruta" o "proxy"     → domain/api-gateway.md
+tarea contiene "prompt" o "temario" o "AI index" → domain/educational-logic.md
+tarea contiene "nuevo servicio"                 → domain/project-structure.md + domain/persistence-jpa.md + domain/infrastructure-docker.md + domain/api-gateway.md
+tarea requiere "commit" o "git"                 → core/git-workflow.md
 ```
 
 ## Puertas de Calidad (Quality Gates)
