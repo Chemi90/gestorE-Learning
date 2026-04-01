@@ -1,17 +1,17 @@
 # Skill: Coherencia de Datos (SQL-Entity-Test)
 
 ## Proposito
-Garantizar la sincronía absoluta entre las Entidades Java (JPA), los esquemas SQL de producción/infraestructura y los esquemas SQL de tests de integración para evitar fallos de persistencia en tiempo de ejecución.
+Garantizar la sincronía absoluta entre las Entidades Java (JPA), los esquemas SQL de producción/infraestructura y los esquemas SQL de tests de integración.
 
-## Reglas Obligatorias
+## 🛑 REGLAS DE ORO (BLOQUEANTES)
 
 1. **La Tríada Sagrada**: Cualquier cambio estructural (añadir/quitar/renombrar columnas o tipos) DEBE aplicarse simultáneamente en:
    - **Entidad**: `services/**/domain/*.java`
    - **SQL Infra**: `infra/postgres/init/*.sql`
    - **SQL Test**: `services/**/src/test/resources/init-test.sql`
-2. **Naming Strict**: Los nombres de columnas en SQL (`snake_case`) deben mapear exactamente con los campos en Java (`camelCase`) según las convenciones de Hibernate configuradas en el proyecto.
-3. **Sincronía de Tipos**: Los Enums definidos en Postgres (`CREATE TYPE ... AS ENUM`) deben coincidir 1:1 con los Enums de Java.
-4. **Verificación Innegociable**: Tras un cambio en el modelo, se DEBE ejecutar `mvn clean compile` en el microservicio afectado para validar el mapeo de Hibernate antes de realizar cualquier commit.
+2. **Mandato de Turno Único**: Está prohibido subir un cambio en una Entidad Java sin haber actualizado sus dos espejos SQL en el mismo commit.
+3. **Naming Strict**: Los nombres de columnas en SQL (`snake_case`) deben mapear exactamente con los campos en Java (`camelCase`).
+4. **Verificación Innegociable**: Tras un cambio en el modelo, se DEBE ejecutar `mvn clean compile` para validar Hibernate.
 
 ## Procedimiento
 

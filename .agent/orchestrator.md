@@ -30,36 +30,38 @@ Raiz del monorepo: `/gestorE-Learning/`
 
 No escribas codigo para tareas complejas sin antes definir una especificacion.
 
-## Flujo de Trabajo en 4 Fases
+## Flujo de Trabajo Mandatorio (Algoritmo de 5 Fases)
+
+El agente DEBE seguir estas fases secuencialmente. Saltar una fase es motivo de terminación de la tarea.
+
+### FASE 0 — SALUDO
+- Di simplemente "hola señor desde GEMINI.md" para confirmar que has cargado el contexto y el orquestador.
 
 ### FASE 1 — EXPLORADOR
 Antes de escribir una sola linea de codigo:
-1. Ejecuta `mcp__engram__mem_search` con palabras clave de la tarea.
+1. Ejecuta `mcp_engram_mem_search` con palabras clave de la tarea.
 2. Identifica el servicio y la capa afectada (controller / service / domain / dto / repository / security).
-3. Lee los archivos relevantes con `Read` y `Glob`.
-4. Carga los skills necesarios de `.agent/skills/`.
-5. Identifica patrones existentes a seguir (no inventes nuevos si ya existe uno).
+3. Carga obligatoriamente las skills detectadas en el "Enrutamiento de Skills".
+4. Identifica patrones existentes a seguir (no inventes nuevos).
 
 ### FASE 2 — ESPECIFICADOR
-Para cambios de mas de 3 archivos o funcionalidades nuevas:
+Obligatorio para cambios de mas de 3 archivos o funcionalidades nuevas:
 1. Crea un archivo de especificacion en `.agent/specs/<nombre-feature>.md`.
-2. Incluye: objetivo, lista de archivos a crear/modificar, contratos de API, esquema de BD si aplica.
-3. Presenta el spec al usuario y espera aprobacion explicita antes de continuar.
-4. Para cambios pequenos (1-2 archivos, bugfixes) puedes saltar esta fase.
+2. Incluye: objetivo, lista de archivos a crear/modificar, contratos de API, esquema de BD.
+3. Presenta el spec al usuario y ESPERA aprobacion explicita antes de continuar.
 
 ### FASE 3 — IMPLEMENTADOR
 Con el spec aprobado o para cambios menores:
 1. Recarga los skills especificos para la tarea.
 2. Implementa en diffs pequenos y enfocados, un archivo a la vez.
 3. Sigue ESTRICTAMENTE los patrones del codebase (ver skills).
-4. Nunca mezcles refactoring con nueva funcionalidad en el mismo commit.
+4. Nunca mezcles refactorización con nueva lógica.
 
-### FASE 4 — VERIFICADOR
-Al terminar cada cambio:
-1. Propone los comandos de test exactos a ejecutar.
-2. Verifica que las convenciones de paquete, nomenclatura y estilo se cumplen.
-3. Confirma que no hay endpoints publicos sin proteccion JWT involuntaria.
-4. Guarda contexto relevante en Engram con `mcp__engram__mem_save`.
+### FASE 4 — VERIFICADOR (BLOCKING GATE)
+- **Mandato**: No se permite commit/push sin éxito en esta fase.
+- **Gatekeeper**: Invoca obligatoriamente `domain/gatekeeper.md`.
+- **Tests**: Ejecuta `mvn test` (Backend) y `npm test` (Frontend) localmente (ver comandos abajo).
+- **Engram**: Guarda contexto relevante en Engram con `mcp_engram_mem_save`.
 
 ## Catalogo de Skills (Jerarquía Core vs Domain)
 

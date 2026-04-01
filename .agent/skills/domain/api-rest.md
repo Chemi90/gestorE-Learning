@@ -3,13 +3,13 @@
 ## Proposito
 Convenciones para controladores, DTOs, validaciones y manejo de errores en endpoints REST.
 
-## Reglas Obligatorias
+## 🛑 REGLAS DE ORO (BLOQUEANTES)
 
-1. Todos los endpoints usan el prefijo `/api/v1/<recurso>`.
-2. Inyeccion por constructor — nunca `@Autowired` en campo.
-3. DTOs son Java `record` con anotaciones de `jakarta.validation`.
-4. Nunca exponer entidades JPA directamente en la respuesta.
-5. Logica de negocio en `@Service`, nunca en el controlador.
+1. **Prefijo Único**: Todos los endpoints usan `/api/v1/<recurso>`.
+2. **Inyección Inmaculada**: Inyección por constructor — NUNCA `@Autowired` en campos.
+3. **Contratos Record**: DTOs son Java `record` con anotaciones de `jakarta.validation`.
+4. **No Fugitivas**: Prohibido exponer entidades JPA directamente en la respuesta.
+5. **Validación de Campo**: Tras crear un endpoint, DEBE validarse manualmente con un script en `scripts/` o `curl` antes de declarar la tarea terminada.
 
 ## Convencion General de Controladores
 
